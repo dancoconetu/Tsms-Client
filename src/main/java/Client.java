@@ -20,6 +20,8 @@ public class Client implements Runnable {
     private String IMAGE_TO_SEND_WINDOWS = "C:\\Users\\dic\\CF000037.IIQ";
     private String IMAGE_TO_SEND_MAC = "/Users/testdepartment/Desktop/LEA-Credo40-L.IIQ";
     private byte[] mybytearray;
+    private SystemInfo systemInfo = new SystemInfo();
+    private FolderInfo folderInfo = new FolderInfo();
 
     public Client(String serverName, int serverPort) {
         System.out.println("Establishing connection. Please wait ...");
@@ -72,14 +74,19 @@ public class Client implements Runnable {
         {
             sendMessage(handler.runScript("dd"));
         }
-        if (msg.equals("server:send"))
+        if (msg.equals("server:send")) {
+            sendFile("CF000237.IIQ");
+        }
+        if(msg.equals("server:sendAll"))
         {
-            sendFile();
+            sendMultipleFiles();
         }
     }
 
     public void start() throws IOException
-    {
+    {   FolderInfo folderInfo = new FolderInfo();
+        for (File file: folderInfo.getAllFilesWithExtension("IIQ"))
+        System.out.println(file.getName());
         console = new DataInputStream(System.in);
         streamOut = new DataOutputStream(socket.getOutputStream());
         if (thread == null)
@@ -103,12 +110,21 @@ public class Client implements Runnable {
 
     }
 
-    public void sendFile() {
+    public void sendMultipleFiles()
+    {
+        for (File file: folderInfo.getAllFilesWithExtension("IIQ"))
+        {
+            sendFile( file.getName());
+        }
+    }
+
+    public void sendFile(String image) {
         FileInputStream fis = null;
         BufferedInputStream bis = null;
         //OutputStream os = null;
         BufferedOutputStream bos = null;
         DataOutputStream dos;
+        String imagePath = systemInfo.getPathForHome() + image;
         sendMessage("Sending...");
         try
         {
@@ -119,27 +135,21 @@ public class Client implements Runnable {
             e.printStackTrace();
         }
         dos = new DataOutputStream(bos);
-        try
-        {
-            sleep(500);
-        }
-        catch (InterruptedException e)
-        {
-            e.printStackTrace();
-        }
-        IMAGE_TO_SEND= IMAGE_TO_SEND_WINDOWS;
+        sleepTime();
+
         try
         {
             DataInputStream streamIn  = new DataInputStream(socket.getInputStream());
             while (!streamIn.readUTF().equals("Go")){}
-            File myFile = new File(IMAGE_TO_SEND);
+            sendMessage(image);
+            File myFile = new File(imagePath);
             mybytearray = new byte[(int) myFile.length()];
             long fileLength = myFile.length();
             dos.writeLong(fileLength);
             fis = new FileInputStream(myFile);
             bis = new BufferedInputStream(fis);
             bis.read(mybytearray, 0, mybytearray.length);
-            System.out.println("Sending " + IMAGE_TO_SEND + "(" + mybytearray.length + " bytes)");
+            System.out.println("Sending " + imagePath + "(" + mybytearray.length + " bytes)");
             bos.write(mybytearray, 0, mybytearray.length);
             bos.flush();
             System.out.println("Done.");
@@ -151,6 +161,7 @@ public class Client implements Runnable {
         finally
         {
             System.out.println("sent");
+            sleepTime();
             //sendMessage("succesfully sent");
 //             try {
 //                 if (bis != null) bis.close();
@@ -182,6 +193,18 @@ public class Client implements Runnable {
         }
         client.close();
         client.stop();
+    }
+
+    public void sleepTime()
+    {
+        try
+        {
+            sleep(500);
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String args[])
