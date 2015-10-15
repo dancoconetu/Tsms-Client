@@ -1,4 +1,8 @@
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +42,7 @@ public class FolderInfo {
         if (getFileExtension(listOfFiles[i]).equals(extension))
         {
             allFilesWithExtension.add( listOfFiles[i]);
+
         }
         return allFilesWithExtension;
     }

@@ -6,6 +6,9 @@ import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static java.lang.Thread.sleep;
 
@@ -23,17 +26,13 @@ public class Client implements Runnable {
     private SystemInfo systemInfo = new SystemInfo();
     private FolderInfo folderInfo = new FolderInfo();
 
-    public Client(String serverName, int serverPort) {
+    public Client(String serverName, int serverPort) throws IOException {
         System.out.println("Establishing connection. Please wait ...");
-        try {
+
             socket = new Socket(serverName, serverPort);
             System.out.println("Connected: " + socket);
             start();
-        } catch (UnknownHostException uhe) {
-            System.out.println("Host unknown: " + uhe.getMessage());
-        } catch (IOException ioe) {
-            System.out.println("Unexpected exception: " + ioe.getMessage());
-        }
+
     }
 
     public void run() {
@@ -66,6 +65,7 @@ public class Client implements Runnable {
             System.out.println(msg.substring(7));
             sendMessage(msg.substring(7));
         }
+
         if (msg.equals("server:system"))
         {
             sendMessage(handler.returnSystemInfo());
@@ -143,16 +143,27 @@ public class Client implements Runnable {
             while (!streamIn.readUTF().equals("Go")){}
             sendMessage(image);
             File myFile = new File(imagePath);
+
             mybytearray = new byte[(int) myFile.length()];
-            long fileLength = myFile.length();
-            dos.writeLong(fileLength);
             fis = new FileInputStream(myFile);
             bis = new BufferedInputStream(fis);
             bis.read(mybytearray, 0, mybytearray.length);
+            sendMessage("ImageFound");
+            long fileLength = myFile.length();
+            dos.writeLong(fileLength);
+
             System.out.println("Sending " + imagePath + "(" + mybytearray.length + " bytes)");
             bos.write(mybytearray, 0, mybytearray.length);
             bos.flush();
             System.out.println("Done.");
+
+
+        }
+        catch (FileNotFoundException e)
+        {
+            System.out.println("File not found!");
+            sendMessage("ImageNotFound");
+
         }
         catch (Exception e)
         {
@@ -162,6 +173,7 @@ public class Client implements Runnable {
         {
             System.out.println("sent");
             sleepTime();
+
             //sendMessage("succesfully sent");
 //             try {
 //                 if (bis != null) bis.close();
@@ -183,7 +195,7 @@ public class Client implements Runnable {
         }
         try
         {
-            if (console != null) console.close();
+            //if (console != null) console.close();
             if (streamOut != null) streamOut.close();
             if (socket != null) socket.close();
         }
@@ -210,6 +222,10 @@ public class Client implements Runnable {
     public static void main(String args[])
     {
         Client client = null;
-        client = new Client("172.16.4.6", 7777);
+        try {
+            client = new Client("172.16.4.6", 7777);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
