@@ -1,10 +1,17 @@
+import java.io.File;
+
 /**
  * Created by dic on 08-10-2015.
  */
 public class SystemInfo {
     private  String OS = System.getProperty("os.name").toLowerCase();
-    private String pathForHome="";
+    private File pathForHome;
 
+
+    public SystemInfo(File pathForHome)
+    {
+        this.pathForHome = pathForHome;
+    }
 
     public SystemInfo() {
 
@@ -14,19 +21,31 @@ public class SystemInfo {
 
         if (isWindows()) {
             System.out.println("This is Windows");
-            pathForHome=homeDir + "\\TSMS\\";
+            //pathForHome=homeDir + "\\TSMS\\";
         } else if (isMac()) {
             System.out.println("This is Mac");
-            pathForHome= homeDir + "/TSMS/";
+            //pathForHome= homeDir + "/TSMS/";
         } else if (isUnix()) {
             System.out.println("This is Unix or Linux");
-            pathForHome= homeDir + "/TSMS/";
+           // pathForHome= homeDir + "/TSMS/";
         } else {
             System.out.println("Your OS is not support!!");
         }
     }
 
-    public String getPathForHome()
+    public void setPathForHome(File path)
+    {
+        pathForHome = path;
+    }
+    public String getPathForHomeAsString()
+    {
+        if (isWindows())
+        return getPathForHome() + "\\";
+        else
+            return getPathForHome() +  "/";
+    }
+
+    public File getPathForHome()
     {
         return pathForHome;
     }

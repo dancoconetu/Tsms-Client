@@ -10,12 +10,20 @@ import java.util.List;
  * Created by dic on 08-10-2015.
  */
 public class FolderInfo {
-    SystemInfo systemInfo = new SystemInfo();
-    String folderPath = systemInfo.getPathForHome();
-    String pythonExtension = "py";
+
+    File folderPath;
+    SystemInfo systemInfo;
+    public FolderInfo(SystemInfo systemInfo)
+    {
+        this.systemInfo = new SystemInfo();
+         folderPath = systemInfo.getPathForHome();
+        String pythonExtension = "py";
+    }
+    //SystemInfo systemInfo = new SystemInfo();
+
     public File[] getAllFolderFiles()
     {
-        File folder = new File(folderPath);
+        File folder = folderPath;
         File[] listOfFiles = folder.listFiles();
 
         for (int i = 0; i < listOfFiles.length; i++) {
@@ -33,8 +41,8 @@ public class FolderInfo {
     }
 
     public ArrayList<File> getAllFilesWithExtension(String extension)
-    {
-        File folder = new File(folderPath);
+    {   //folderPath = systemInfo.getPathForHome();
+        File folder = folderPath;
         File[] listOfFiles = folder.listFiles();
         ArrayList<File> allFilesWithExtension = new ArrayList<File>();
 

@@ -23,12 +23,13 @@ public class Client implements Runnable {
     private String IMAGE_TO_SEND_WINDOWS = "C:\\Users\\dic\\CF000037.IIQ";
     private String IMAGE_TO_SEND_MAC = "/Users/testdepartment/Desktop/LEA-Credo40-L.IIQ";
     private byte[] mybytearray;
-    private SystemInfo systemInfo = new SystemInfo();
-    private FolderInfo folderInfo = new FolderInfo();
+    private SystemInfo systemInfo;
+    private FolderInfo folderInfo;
 
-    public Client(String serverName, int serverPort) throws IOException {
+    public Client(String serverName, int serverPort, SystemInfo systemInfo) throws IOException {
         System.out.println("Establishing connection. Please wait ...");
-
+            this.systemInfo = systemInfo;
+            folderInfo = new FolderInfo(systemInfo);
             socket = new Socket(serverName, serverPort);
             System.out.println("Connected: " + socket);
             start();
@@ -84,7 +85,7 @@ public class Client implements Runnable {
     }
 
     public void start() throws IOException
-    {   FolderInfo folderInfo = new FolderInfo();
+    {
         for (File file: folderInfo.getAllFilesWithExtension("IIQ"))
         System.out.println(file.getName());
         console = new DataInputStream(System.in);
@@ -124,7 +125,7 @@ public class Client implements Runnable {
         //OutputStream os = null;
         BufferedOutputStream bos = null;
         DataOutputStream dos;
-        String imagePath = systemInfo.getPathForHome() + image;
+        String imagePath = systemInfo.getPathForHomeAsString()  + image;
         sendMessage("Sending...");
         try
         {
@@ -161,6 +162,7 @@ public class Client implements Runnable {
         }
         catch (FileNotFoundException e)
         {
+            e.printStackTrace();
             System.out.println("File not found!");
             sendMessage("ImageNotFound");
 
@@ -223,7 +225,7 @@ public class Client implements Runnable {
     {
         Client client = null;
         try {
-            client = new Client("172.16.4.6", 7777);
+            client = new Client("172.16.4.6", 7777, new SystemInfo());
         } catch (Exception e) {
             e.printStackTrace();
         }
