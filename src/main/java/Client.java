@@ -25,9 +25,12 @@ public class Client implements Runnable {
     private byte[] mybytearray;
     private SystemInfo systemInfo;
     private FolderInfo folderInfo;
+    private MainClass mainClass;
 
-    public Client(String serverName, int serverPort, SystemInfo systemInfo) throws IOException {
-        System.out.println("Establishing connection. Please wait ...");
+    public Client(String serverName, int serverPort, SystemInfo systemInfo, MainClass mainClass) throws IOException
+    {
+            this.mainClass = mainClass;
+            System.out.println("Establishing connection. Please wait ...");
             this.systemInfo = systemInfo;
             folderInfo = new FolderInfo(systemInfo);
             socket = new Socket(serverName, serverPort);
@@ -146,7 +149,10 @@ public class Client implements Runnable {
             File myFile = new File(imagePath);
 
             mybytearray = new byte[(int) myFile.length()];
-            fis = new FileInputStream(myFile);
+
+                fis = new FileInputStream(myFile);
+
+
             bis = new BufferedInputStream(fis);
             bis.read(mybytearray, 0, mybytearray.length);
             sendMessage("ImageFound");
@@ -190,23 +196,35 @@ public class Client implements Runnable {
 
     public void stop()
     {
+        System.out.println("step2");
         if (thread != null)
         {
             thread.stop();
             thread = null;
+            System.out.println("step3");
+            mainClass.showDisconnectedInformation();
+
         }
         try
         {
             //if (console != null) console.close();
             if (streamOut != null) streamOut.close();
             if (socket != null) socket.close();
+
+
         }
         catch (IOException ioe)
         {
             System.out.println("Error closing ...");
         }
+
+        mainClass.disconnectSlave();
+
         client.close();
         client.stop();
+
+
+
     }
 
     public void sleepTime()
@@ -223,11 +241,11 @@ public class Client implements Runnable {
 
     public static void main(String args[])
     {
-        Client client = null;
-        try {
-            client = new Client("172.16.4.6", 7777, new SystemInfo());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        Client client = null;
+//        try {
+//            client = new Client("172.16.4.6", 7777, new SystemInfo());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
 }

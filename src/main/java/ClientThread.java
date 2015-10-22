@@ -34,6 +34,9 @@ public class ClientThread extends Thread
     {  System.out.println("Error closing input stream: " + ioe);
     }
     }
+
+
+
     public void run()
     {  while (true)
     {  try
@@ -41,9 +44,11 @@ public class ClientThread extends Thread
 
     }
     catch(IOException ioe)
-    {  System.out.println("Listening error: " + ioe.getMessage());
+    {
+        System.out.println("Listening error: " + ioe.getMessage());
+        System.out.println("step1");
+        client.stop();
 
-            client.stop();
 
 
 

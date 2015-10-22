@@ -1,10 +1,14 @@
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.util.prefs.Preferences;
 
 /**
  * Created by dic on 15-10-2015.
@@ -17,7 +21,7 @@ public class MainClass extends JFrame {
     private JPanel eastPanel;
     private JPanel southPanel;
     private JPanel middlePanel;
-    private JLabel connectionStatus;
+    private JLabel masterIP;
     private JTextField ipTextField;
     private JButton connectButton;
     private JLabel connectStatusLabel;
@@ -27,37 +31,26 @@ public class MainClass extends JFrame {
     private Client slave = null;
     private boolean isSlaveConnected = false;
     private JFrame ourJframe;
+    private boolean isHidden = false;
     public SystemInfo systemInfo;
+    private Preferences prefs;
+    private String ipPreferences = "ipPreferences";
+    private String scriptPreferences = "scriptPreferences";
+
     public MainClass()
-{
-    super("TSMS Slave");
-    JMenuBar menuBar = new JMenuBar();
-    JMenu file = new JMenu("File");
-    JMenuItem item =new JMenuItem("woah");
-    file.add(item);
-    menuBar.add(file);
-    setJMenuBar(menuBar);
-    init();
-    browseButton.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-            browseButtonClicked();
-        }
-    });
-    connectButton.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-            connectButtonClicked();
-        }
-    });
-    folderPathTextField.setText(chooser.getCurrentDirectory().toString());
-    hideAppButton.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-            hideButtonPressed();
-        }
-    });
-}
+    {
+        super("TSMS Slave");
+        init();
+        connectSlave();
+    }
 
     public void init()
+
     {
+        prefs = Preferences.userRoot().node(this.getClass().getName());
+        SystemTrayIcon systemTrayIcon = new SystemTrayIcon(this);
+        setIconImage(systemTrayIcon.CreateIcon("icon.png","app icon"));
+
         chooser = new JFileChooser();
         chooser.setCurrentDirectory(new java.io.File("."));
         systemInfo  = new SystemInfo(chooser.getCurrentDirectory());
@@ -66,6 +59,40 @@ public class MainClass extends JFrame {
         connectStatusLabel.setText("Disconnected");
         connectStatusLabel.setForeground(Color.RED);
         connectButton.setForeground(Color.GREEN);
+        browseButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                browseButtonClicked();
+            }
+        });
+        connectButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                connectButtonClicked();
+            }
+        });
+        //folderPathTextField.setText(chooser.getCurrentDirectory().toString());
+        folderPathTextField.setText(prefs.get(scriptPreferences, chooser.getCurrentDirectory().toString()));
+        systemInfo.setPathForHome(new File( prefs.get(scriptPreferences, chooser.getCurrentDirectory().toString())));
+        ipTextField.setText(prefs.get(ipPreferences, "172.16.4.6"));
+        ipTextField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) {
+                prefs.put(ipPreferences, ipTextField.getText());
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                prefs.put(ipPreferences, ipTextField.getText());
+            }
+
+            public void changedUpdate(DocumentEvent e) {
+                prefs.put(ipPreferences, ipTextField.getText());
+            }
+        });
+        hideAppButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                hideButtonPressed();
+            }
+        });
+
+
     }
 
     private void browseButtonClicked() {
@@ -75,7 +102,9 @@ public class MainClass extends JFrame {
         //
         chooser.setAcceptAllFileFilterUsed(false);
         //
-        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
+        {
+            prefs.put(scriptPreferences, chooser.getSelectedFile().toString());
             folderPathTextField.setText(chooser.getSelectedFile().toString());
             System.out.println("getCurrentDirectory(): "
                     + chooser.getCurrentDirectory());
@@ -84,6 +113,7 @@ public class MainClass extends JFrame {
             systemInfo.setPathForHome(chooser.getSelectedFile());
             System.out.println("new path for home: " + systemInfo.getPathForHome());
             disconnectSlave();
+            connectSlave();
 
         }
         else {
@@ -95,39 +125,33 @@ public class MainClass extends JFrame {
         if (!isSlaveConnected)
         {
             connectSlave();
-
             System.out.println("Connected");
-
-
         }
         else
-        { System.out.println("Disconnected");
+        {
+            System.out.println("Disconnected");
             disconnectSlave();
-
-
-
         }
 
     }
 
-    private void hideButtonPressed()
+    public void hideButtonPressed()
     {
-
+        isHidden = true;
         setVisible(false);
         System.out.println("hiding");
     }
 
-    private void unhideButtonPressed()
-    {
-
+    public  void unhideButtonPressed()
+    {   isHidden = false;
+        setVisible(true);
+        System.out.println("unhiding");
     }
 
     private void connectSlave()
     {
         try {
-
-            slave = new Client(ipTextField.getText(), 7777, systemInfo);
-
+            slave = new Client(ipTextField.getText(), 7777, systemInfo, this);
             connectStatusLabel.setText("Connected");
             connectStatusLabel.setForeground(Color.GREEN);
             isSlaveConnected = true;
@@ -139,24 +163,40 @@ public class MainClass extends JFrame {
             disconnectSlave();
         } catch (IOException ioe) {
             System.out.println("Unexpected exception: " + ioe.getMessage());
+            JOptionPane.showMessageDialog(this, "Connection was refused.", "Connection error",
+                    JOptionPane.ERROR_MESSAGE);
             disconnectSlave();
-
-
         }
     }
 
 
-    private void disconnectSlave()
-    {
-        if ( isSlaveConnected)
+    protected void disconnectSlave()
+    {   boolean previousStatusForSlave = isSlaveConnected;
+        isSlaveConnected = false;
+        if (previousStatusForSlave)
             slave.stop();
         connectStatusLabel.setText("Disconnected");
         connectStatusLabel.setForeground(Color.RED);
-        isSlaveConnected = false;
+
         connectButton.setText("Connect");
         connectButton.setForeground(Color.GREEN);
 
+    }
 
+    protected void showDisconnectedInformation()
+    {
+        JOptionPane.showMessageDialog(this,"The connection was terminated. Try again to connect","Inane error",
+                JOptionPane.ERROR_MESSAGE);
+    }
+
+    public boolean IsSlaveConnected()
+    {
+        return isSlaveConnected;
+    }
+
+    public boolean IsHidden()
+    {
+        return isHidden;
     }
 
     public static void main(String[] args)
@@ -165,7 +205,7 @@ public class MainClass extends JFrame {
             new ServerSocket(10000);
         } catch (IOException e) {
             e.printStackTrace();
-            System.exit(1);
+            System.exit(0);
         }
 //        JFrame jFrame = new JFrame("TSMS Slave");
 //
@@ -179,6 +219,7 @@ public class MainClass extends JFrame {
         mainClass.setDefaultCloseOperation(mainClass.EXIT_ON_CLOSE);
         mainClass.pack();
         mainClass.setVisible(true);
+
 
 
     }
