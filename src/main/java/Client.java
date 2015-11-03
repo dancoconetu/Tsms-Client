@@ -2,6 +2,8 @@
  * Created by dic on 18-09-2015.
  */
 
+import com.sun.corba.se.impl.orbutil.concurrent.Mutex;
+
 import java.io.*;
 import java.net.Socket;
 
@@ -22,6 +24,9 @@ public class Client implements Runnable {
     private FolderInfo folderInfo;
     private MainClass mainClass;
     private boolean inUse = false;
+    public Mutex mutexSend = new Mutex();
+    public Mutex mutexReceive  = new Mutex();
+    public Mutex inUseMutex = new Mutex();
 
 
     public Client(String serverName, int serverPort, SystemInfo systemInfo, MainClass mainClass) throws IOException
@@ -75,6 +80,7 @@ public class Client implements Runnable {
         if (msg.equals("server:system"))
         {
             sendMessage(handler.returnSystemInfo());
+            folderInfo.createFolder("Haleluia");
         }
         if (msg.equals("server:script"))
         {
@@ -96,10 +102,11 @@ public class Client implements Runnable {
         if(msg.equals("server:xml"))
         {
             XMLCreator xmlCreator = new XMLCreator();
-            System.out.println("Xml: " + xmlCreator.createScriptRunningXML( "hello", "2.7.0", folderInfo.getAllFilesWithExtension("IIQ"), "py"));
+            System.out.println("Xml: " + xmlCreator.createScriptRunningXML("hello", "2.7.0", folderInfo.getAllFilesWithExtension("IIQ"), "py"));
             System.out.println("the Second xml: " + xmlCreator.createSendFilesXml(folderInfo.getAllFilesWithExtension("IIQ")));
             handler.handleXml(xmlCreator.createScriptRunningXML("hello", "2.7.0", folderInfo.getAllFilesWithExtension("IIQ"), "py"));
-            handler.handleXml(xmlCreator.createSendFilesXml(folderInfo.getAllFilesWithExtension("IIQ")));
+            String[][] list=  handler.handleXml(xmlCreator.createSendFilesXml(folderInfo.getAllFilesWithExtension("IIQ")));
+            handler.getMissingFiles(list,folderInfo.getAllFilesWithExtension("IIQ") );
         }
     }
 
@@ -119,13 +126,19 @@ public class Client implements Runnable {
 
     public void sendMessage(String message) {
         try
-        {
+        {   mutexSend.acquire();
             streamOut.writeUTF(message);
             streamOut.flush();
+            mutexSend.release();
         }
         catch (IOException e)
         {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        finally {
+
         }
 
     }
@@ -138,13 +151,18 @@ public class Client implements Runnable {
         }
     }
 
-    public void sendFile(String image) {
+    public void sendFile(String file) {
+
+        try {
+            inUseMutex.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         FileInputStream fis = null;
         BufferedInputStream bis = null;
-        //OutputStream os = null;
         BufferedOutputStream bos = null;
         DataOutputStream dos;
-        String imagePath = systemInfo.getPathForHomeAsString()  + image;
+        String imagePath = systemInfo.getPathForHomeAsString()  + file;
         sendMessage("Sending...");
         try
         {
@@ -160,25 +178,23 @@ public class Client implements Runnable {
         try
         {
             DataInputStream streamIn  = new DataInputStream(socket.getInputStream());
-            while (!streamIn.readUTF().equals("Go")){}
-            sendMessage(image);
+
+            sendMessage(file); //sending file name
+
             File myFile = new File(imagePath);
-
             mybytearray = new byte[(int) myFile.length()];
-
-                fis = new FileInputStream(myFile);
-
-
+            fis = new FileInputStream(myFile);
             bis = new BufferedInputStream(fis);
             bis.read(mybytearray, 0, mybytearray.length);
             sendMessage("ImageFound");
+            mutexSend.acquire();
             long fileLength = myFile.length();
             dos.writeLong(fileLength);
-
             System.out.println("Sending " + imagePath + "(" + mybytearray.length + " bytes)");
             bos.write(mybytearray, 0, mybytearray.length);
             bos.flush();
             System.out.println("Done.");
+            mutexSend.release();
 
 
         }
@@ -208,6 +224,8 @@ public class Client implements Runnable {
 //            }
 
         }
+
+        inUseMutex.release();
     }
 
     public void stop()
@@ -241,11 +259,13 @@ public class Client implements Runnable {
 
     }
 
-
-
-
     public void receiveFile()
     {
+        try {
+            inUseMutex.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         try
         {
             sleep(500);
@@ -321,6 +341,8 @@ public class Client implements Runnable {
             }
         }
         inUse = false;
+
+        inUseMutex.release();
     }
 
     public void sleepTime()

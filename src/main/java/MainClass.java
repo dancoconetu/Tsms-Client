@@ -27,6 +27,7 @@ public class MainClass extends JFrame {
     private JButton connectButton;
     private JLabel connectStatusLabel;
     private JButton hideAppButton;
+    private JTextField scriptsResults;
     private JFileChooser chooser;
     private String choosertitle;
     private Client slave = null;
@@ -93,29 +94,6 @@ public class MainClass extends JFrame {
             }
         });
 
-//        Thread t1 = new Thread(new Runnable() {
-//            public void run() {
-//
-//
-//
-//                        while(true)
-//                        {
-//                            try {
-//                                sleep(60000);
-//                            } catch (InterruptedException e) {
-//                                e.printStackTrace();
-//                            }
-//                            slave.sendMessage("Rain Check");
-//                            //System.out.println(slave.isAlive());
-//
-//                            //if (!slave.isAlive())
-//
-//                              //  disconnectSlave();
-//                        }
-//
-//            }
-//        });
-//        t1.start();
 
 
     }
@@ -182,6 +160,37 @@ public class MainClass extends JFrame {
             isSlaveConnected = true;
             connectButton.setText("Disconnect");
             connectButton.setForeground(Color.RED);
+            Thread t1 = new Thread(new Runnable() {
+                public void run() {
+
+
+
+                    while(true)
+                    {
+                        try {
+                            sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            slave.inUseMutex.acquire();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        slave.sendMessage("Rain Check");
+                        //System.out.println("rain check sent");
+                        slave.inUseMutex.release();
+                        //System.out.println(slave.isAlive());
+
+                        //if (!slave.isAlive())
+
+                        //  disconnectSlave();
+                    }
+
+                }
+            });
+            t1.start();
+
         } catch (UnknownHostException uhe) {
             System.out.println("Host unknown: " + uhe.getMessage());
             System.out.println("wtf?");

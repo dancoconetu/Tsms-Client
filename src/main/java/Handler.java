@@ -6,17 +6,16 @@ import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 
 /**
  * Created by dic on 24-09-2015.
  */
 public class Handler {
+    private int counter = 0;
     public Handler()
     {
 
@@ -117,7 +116,7 @@ public class Handler {
     }
 
 
-    public void handleXml(String xmlString)
+    public String[][] handleXml(String xmlString)
     {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder;
@@ -125,29 +124,73 @@ public class Handler {
         try
         {
             builder = factory.newDocumentBuilder();
-            document = builder.parse( new InputSource( new StringReader( xmlString ) ) );
+            document = builder.parse(new InputSource(new StringReader(xmlString)));
         } catch (Exception e) {
             e.printStackTrace();
         }
         document.getDocumentElement().normalize();
         NodeList nodeList = document.getElementsByTagName("File");
+        String[][] list = new String[nodeList.getLength()][2];
         for (int temp = 0; temp < nodeList.getLength(); temp++) {
 
             Node nNode = nodeList.item(temp);
 
             System.out.println("\nCurrent Element :" + nNode.getNodeName());
 
-            if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+            if (nNode.getNodeType() == Node.ELEMENT_NODE ) {
 
                 Element eElement = (Element) nNode;
-                System.out.println("Image name: " + eElement.getAttribute("FileName"));
-                System.out.println("Size:"  + eElement.getAttribute("FileSize"));
+                String fileName= eElement.getAttribute("FileName") ;
+                String fileSize = eElement.getAttribute("FileSize");
+                System.out.println("Image name: " +  fileName);
+                System.out.println("Size:"  +  fileSize);
+                list[temp][0] = fileName;
+                list[temp][1] = fileSize;
+
+                //list[]
             }
         }
 
         //Node node = document.getElementById("TaskType");
         System.out.println("node name: " + document.getDocumentElement().getNodeName());
+
+        return list;
     }
+
+    public String[][] getMissingFiles(String[][] stringFileList, ArrayList<File> fileList)
+    {
+        String[][] stringFilesMissing= new String[stringFileList.length][2];
+        int j =0;
+        for (int i=0; i<stringFileList.length; i++)
+        {
+            if (!isFilePresent(stringFileList[i][0], stringFileList[i][1], fileList))
+            {
+                stringFilesMissing[j][0] = stringFileList[i][0];
+                stringFilesMissing[j][1] = stringFileList[i][1];
+                j++;
+            }
+        }
+
+        return stringFilesMissing;
+    }
+
+
+    private boolean isFilePresent(String fileName, String fileSize, ArrayList<File> fileList )
+    {
+
+        for (File f: fileList)
+        {
+            if (f.getName().equals(fileName))
+            {
+                if ((f.length()+"").equals(fileSize))
+                {   System.out.println("Counter: " + ++counter);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 
 
 
