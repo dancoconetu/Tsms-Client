@@ -35,6 +35,10 @@ public class ClientThread extends Thread
     }
     }
 
+    public boolean isRunning()
+    {
+        return !socket.isClosed();
+    }
 
 
     public void run()

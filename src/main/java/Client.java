@@ -4,11 +4,6 @@
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static java.lang.Thread.sleep;
 
@@ -26,6 +21,8 @@ public class Client implements Runnable {
     private SystemInfo systemInfo;
     private FolderInfo folderInfo;
     private MainClass mainClass;
+    private boolean inUse = false;
+
 
     public Client(String serverName, int serverPort, SystemInfo systemInfo, MainClass mainClass) throws IOException
     {
@@ -39,6 +36,11 @@ public class Client implements Runnable {
 
     }
 
+    public boolean isAlive()
+    {   PrintWriter out = new PrintWriter(streamOut, true);
+        out.println("output");
+        return !out.checkError();
+    }
     public void run() {
         while (thread != null)
         {
@@ -67,7 +69,7 @@ public class Client implements Runnable {
         else
         {
             System.out.println(msg.substring(7));
-            sendMessage(msg.substring(7));
+           // sendMessage(msg.substring(7));
         }
 
         if (msg.equals("server:system"))
@@ -83,7 +85,21 @@ public class Client implements Runnable {
         }
         if(msg.equals("server:sendAll"))
         {
+
             sendMultipleFiles();
+        }
+
+        if(msg.equals("server:sendToClient"))
+        {   inUse = true;
+            receiveFile();
+        }
+        if(msg.equals("server:xml"))
+        {
+            XMLCreator xmlCreator = new XMLCreator();
+            System.out.println("Xml: " + xmlCreator.createScriptRunningXML( "hello", "2.7.0", folderInfo.getAllFilesWithExtension("IIQ"), "py"));
+            System.out.println("the Second xml: " + xmlCreator.createSendFilesXml(folderInfo.getAllFilesWithExtension("IIQ")));
+            handler.handleXml(xmlCreator.createScriptRunningXML("hello", "2.7.0", folderInfo.getAllFilesWithExtension("IIQ"), "py"));
+            handler.handleXml(xmlCreator.createSendFilesXml(folderInfo.getAllFilesWithExtension("IIQ")));
         }
     }
 
@@ -223,15 +239,95 @@ public class Client implements Runnable {
         client.close();
         client.stop();
 
+    }
 
 
+
+
+    public void receiveFile()
+    {
+        try
+        {
+            sleep(500);
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+        FileOutputStream fos = null;
+        BufferedOutputStream bos = null;
+        try
+        {   sendMessage("Go");
+            System.out.println("Goooooooooooooooooooooooooooo");
+            long startTime = System.currentTimeMillis();
+            BufferedInputStream bis = new BufferedInputStream(socket.getInputStream());
+            DataInputStream dis = new DataInputStream(bis);
+            String imageName = dis.readUTF();
+            String imageFound = dis.readUTF();
+            System.out.println(imageFound);
+            if (!imageFound.equals("ImageFound") || imageFound.equals("ImageNotFound")  )
+            {
+                throw new Exception();
+            }
+            String IMAGE_TO_BE_RECEIVED;
+            if (systemInfo.isWindows())
+            IMAGE_TO_BE_RECEIVED = folderInfo.folderPath + "\\"  + imageName ;
+            else
+                IMAGE_TO_BE_RECEIVED = folderInfo.folderPath + "/" +  imageName;
+            fos = new FileOutputStream(IMAGE_TO_BE_RECEIVED);
+            bos = new BufferedOutputStream(fos);
+            long fileSize = dis.readLong();
+            System.out.println("File size: " + fileSize);
+            int sizeReceived = 0;
+            int bytesRead = 8192;
+            byte[] buffer = new byte[bytesRead];
+            while(sizeReceived<fileSize && (bytesRead = bis.read(buffer, 0, 8192))>0)
+            {
+                sizeReceived += bytesRead;
+                //System.out.println(sizeReceived + " Available: " + bis.available() + "Count: " + bytesRead);
+                bos.write(buffer, 0, bytesRead);
+                bos.flush();
+            }
+            long estimatedTime = System.currentTimeMillis() - startTime;
+            System.out.println("File " + IMAGE_TO_BE_RECEIVED + " downloaded (" + sizeReceived + " bytes read)"
+                    + " Time Elapsed: " + estimatedTime/1000.0 );
+            if (fileSize != sizeReceived )
+                System.out.println("malicious file sent");
+            /*if (imageCounter==99)
+            {
+                imageCounter = 0;
+                repeted++;
+            }
+            if (imageCounter<100)
+            {
+                send("server:" + "send");
+            }*/
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+            try
+            {
+                if (bos != null) bos.close();
+                if (fos != null) fos.close();
+
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+        inUse = false;
     }
 
     public void sleepTime()
     {
         try
         {
-            sleep(500);
+            sleep(100);
         }
         catch (InterruptedException e)
         {

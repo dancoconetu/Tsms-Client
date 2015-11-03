@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.prefs.Preferences;
+import static java.lang.Thread.sleep;
 
 /**
  * Created by dic on 15-10-2015.
@@ -41,7 +42,7 @@ public class MainClass extends JFrame {
     {
         super("TSMS Slave");
         init();
-        connectSlave();
+        connectSlave(false);
     }
 
     public void init()
@@ -71,7 +72,7 @@ public class MainClass extends JFrame {
         });
         //folderPathTextField.setText(chooser.getCurrentDirectory().toString());
         folderPathTextField.setText(prefs.get(scriptPreferences, chooser.getCurrentDirectory().toString()));
-        systemInfo.setPathForHome(new File( prefs.get(scriptPreferences, chooser.getCurrentDirectory().toString())));
+        systemInfo.setPathForHome(new File(prefs.get(scriptPreferences, chooser.getCurrentDirectory().toString())));
         ipTextField.setText(prefs.get(ipPreferences, "172.16.4.6"));
         ipTextField.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) {
@@ -91,6 +92,30 @@ public class MainClass extends JFrame {
                 hideButtonPressed();
             }
         });
+
+//        Thread t1 = new Thread(new Runnable() {
+//            public void run() {
+//
+//
+//
+//                        while(true)
+//                        {
+//                            try {
+//                                sleep(60000);
+//                            } catch (InterruptedException e) {
+//                                e.printStackTrace();
+//                            }
+//                            slave.sendMessage("Rain Check");
+//                            //System.out.println(slave.isAlive());
+//
+//                            //if (!slave.isAlive())
+//
+//                              //  disconnectSlave();
+//                        }
+//
+//            }
+//        });
+//        t1.start();
 
 
     }
@@ -113,7 +138,7 @@ public class MainClass extends JFrame {
             systemInfo.setPathForHome(chooser.getSelectedFile());
             System.out.println("new path for home: " + systemInfo.getPathForHome());
             disconnectSlave();
-            connectSlave();
+            connectSlave(true);
 
         }
         else {
@@ -124,7 +149,7 @@ public class MainClass extends JFrame {
     private void connectButtonClicked() {
         if (!isSlaveConnected)
         {
-            connectSlave();
+            connectSlave(false);
             System.out.println("Connected");
         }
         else
@@ -137,18 +162,18 @@ public class MainClass extends JFrame {
 
     public void hideButtonPressed()
     {
-        isHidden = true;
+
         setVisible(false);
         System.out.println("hiding");
     }
 
     public  void unhideButtonPressed()
-    {   isHidden = false;
+    {
         setVisible(true);
         System.out.println("unhiding");
     }
 
-    private void connectSlave()
+    private void connectSlave(boolean t)
     {
         try {
             slave = new Client(ipTextField.getText(), 7777, systemInfo, this);
@@ -163,6 +188,7 @@ public class MainClass extends JFrame {
             disconnectSlave();
         } catch (IOException ioe) {
             System.out.println("Unexpected exception: " + ioe.getMessage());
+            if(t)
             JOptionPane.showMessageDialog(this, "Connection was refused.", "Connection error",
                     JOptionPane.ERROR_MESSAGE);
             disconnectSlave();
@@ -174,19 +200,45 @@ public class MainClass extends JFrame {
     {   boolean previousStatusForSlave = isSlaveConnected;
         isSlaveConnected = false;
         if (previousStatusForSlave)
+        {
             slave.stop();
+
+
+        }
         connectStatusLabel.setText("Disconnected");
         connectStatusLabel.setForeground(Color.RED);
 
         connectButton.setText("Connect");
         connectButton.setForeground(Color.GREEN);
+        Thread t1 = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    System.out.println("Sleeping ?");
+                    sleep(60000);
+                    System.out.println("waking");
+                    if (!isSlaveConnected)
+                    connectSlave(false);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+
+                }
+            }
+        });
+        t1.start();
+
+
 
     }
 
     protected void showDisconnectedInformation()
-    {
-        JOptionPane.showMessageDialog(this,"The connection was terminated. Try again to connect","Inane error",
-                JOptionPane.ERROR_MESSAGE);
+    { Thread t1 = new Thread(new Runnable() {
+        public void run() {
+            JOptionPane.showMessageDialog(getContentPane(),"The connection was terminated. Try again to connect","Connection error " + slave.isAlive(),
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    });
+        t1.start();
+
     }
 
     public boolean IsSlaveConnected()
@@ -196,7 +248,7 @@ public class MainClass extends JFrame {
 
     public boolean IsHidden()
     {
-        return isHidden;
+        return !this.isShowing();
     }
 
     public static void main(String[] args)
@@ -216,7 +268,7 @@ public class MainClass extends JFrame {
 
         MainClass mainClass = new MainClass();
         mainClass.setContentPane(mainClass.panel1);
-        mainClass.setDefaultCloseOperation(mainClass.EXIT_ON_CLOSE);
+        mainClass.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         mainClass.pack();
         mainClass.setVisible(true);
 

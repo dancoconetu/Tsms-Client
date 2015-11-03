@@ -16,7 +16,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>Client</mainClass>
+                            <mainClass>MainClass</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
@@ -24,6 +24,7 @@
                     </descriptorRefs>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 
