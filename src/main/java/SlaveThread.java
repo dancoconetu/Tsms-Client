@@ -6,13 +6,13 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-public class ClientThread extends Thread
+public class SlaveThread extends Thread
 {  private Socket           socket   = null;
-    private Client client   = null;
+    private Slave slave = null;
     private DataInputStream  streamIn = null;
 
-    public ClientThread(Client _client, Socket _socket)
-    {  client   = _client;
+    public SlaveThread(Slave _slave, Socket _socket)
+    {  slave = _slave;
         socket   = _socket;
         open();
         start();
@@ -23,7 +23,7 @@ public class ClientThread extends Thread
     }
     catch(IOException ioe)
     {  System.out.println("Error getting input stream: " + ioe);
-        client.stop();
+        slave.stop();
     }
     }
     public void close()
@@ -44,14 +44,14 @@ public class ClientThread extends Thread
     public void run()
     {  while (true)
     {  try
-    {  client.handle(streamIn.readUTF());
+    {  slave.handle(streamIn.readUTF());
 
     }
     catch(IOException ioe)
     {
         System.out.println("Listening error: " + ioe.getMessage());
         System.out.println("step1");
-        client.stop();
+        slave.stop();
 
 
 

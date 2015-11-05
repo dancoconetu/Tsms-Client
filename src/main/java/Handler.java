@@ -16,9 +16,10 @@ import java.util.ArrayList;
  */
 public class Handler {
     private int counter = 0;
-    public Handler()
+    private Slave slave;
+    public Handler(Slave slave)
     {
-
+        this.slave = slave;
     }
 
     public String returnSystemInfo()
@@ -35,7 +36,7 @@ public class Handler {
         }
 
         return hostname + ":" +  System.getProperty("os.name");
-        //return System.getProperty("os.name");
+
     }
 
     public String runScript(String scriptName)
@@ -43,7 +44,10 @@ public class Handler {
         Runtime r = Runtime.getRuntime();
         Process p = null;
         try {
-            p = r.exec("cmd.exe /c python hello.py ");
+            if(slave.systemInfo.isWindows())
+            p = r.exec("cmd.exe /c C:\\Python34\\python.exe hello.py ");
+            else
+                p = r.exec("ls /Users/testdepartment/Desktop");
 
         } catch (IOException e) {
             e.printStackTrace();

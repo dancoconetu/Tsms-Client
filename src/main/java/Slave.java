@@ -9,19 +9,19 @@ import java.net.Socket;
 
 import static java.lang.Thread.sleep;
 
-public class Client implements Runnable {
+public class Slave implements Runnable {
     private Socket socket = null;
     private Thread thread = null;
     private DataInputStream console = null;
     private DataOutputStream streamOut = null;
-    private ClientThread client = null;
+    private SlaveThread client = null;
     private String FILE_TO_SEND = "C:\\Users\\dic\\Heroeswithin_roshan.mp3";
-    private String IMAGE_TO_SEND = "C:\\Users\\dic\\CF000037.IIQ";
+    private String IMAGE_TO_SEND = "C:\\Users\\dic\\tsms-client-1.0-SNAPSHOT-jar-with-dependencies.jar";
     private String IMAGE_TO_SEND_WINDOWS = "C:\\Users\\dic\\CF000037.IIQ";
     private String IMAGE_TO_SEND_MAC = "/Users/testdepartment/Desktop/LEA-Credo40-L.IIQ";
     private byte[] mybytearray;
-    private SystemInfo systemInfo;
-    private FolderInfo folderInfo;
+    public SystemInfo systemInfo;
+    public FolderInfo folderInfo;
     private MainClass mainClass;
     private boolean inUse = false;
     public Mutex mutexSend = new Mutex();
@@ -29,7 +29,7 @@ public class Client implements Runnable {
     public Mutex inUseMutex = new Mutex();
 
 
-    public Client(String serverName, int serverPort, SystemInfo systemInfo, MainClass mainClass) throws IOException
+    public Slave(String serverName, int serverPort, SystemInfo systemInfo, MainClass mainClass) throws IOException
     {
             this.mainClass = mainClass;
             System.out.println("Establishing connection. Please wait ...");
@@ -65,7 +65,7 @@ public class Client implements Runnable {
 
     public void handle(String msg)
     {
-        Handler handler = new Handler();
+        Handler handler = new Handler(this);
         if (msg.equals(".bye"))
         {
             System.out.println("Good bye. Press RETURN to exit ...");
@@ -86,13 +86,11 @@ public class Client implements Runnable {
         {
             sendMessage(handler.runScript("dd"));
         }
-        if (msg.equals("server:send")) {
-            sendFile("CF000237.IIQ");
-        }
+
         if(msg.equals("server:sendAll"))
         {
 
-            sendMultipleFiles();
+            sendMultipleFiles(folderInfo.folderPath);
         }
 
         if(msg.equals("server:sendToClient"))
@@ -106,7 +104,7 @@ public class Client implements Runnable {
             System.out.println("the Second xml: " + xmlCreator.createSendFilesXml(folderInfo.getAllFilesWithExtension("IIQ")));
             handler.handleXml(xmlCreator.createScriptRunningXML("hello", "2.7.0", folderInfo.getAllFilesWithExtension("IIQ"), "py"));
             String[][] list=  handler.handleXml(xmlCreator.createSendFilesXml(folderInfo.getAllFilesWithExtension("IIQ")));
-            handler.getMissingFiles(list,folderInfo.getAllFilesWithExtension("IIQ") );
+            handler.getMissingFiles(list, folderInfo.getAllFilesWithExtension("IIQ"));
         }
     }
 
@@ -118,7 +116,7 @@ public class Client implements Runnable {
         streamOut = new DataOutputStream(socket.getOutputStream());
         if (thread == null)
         {
-            client = new ClientThread(this, socket);
+            client = new SlaveThread(this, socket);
             thread = new Thread(this);
             thread.start();
         }
@@ -143,15 +141,22 @@ public class Client implements Runnable {
 
     }
 
-    public void sendMultipleFiles()
+    public void sendMultipleFiles(File folder)
     {
-        for (File file: folderInfo.getAllFilesWithExtension("IIQ"))
+        for (File f: folderInfo.getOnlyFiles(folder))
         {
-            sendFile( file.getName());
+            sendFile( f);
         }
+
+        for (File f : folderInfo.getFolders(folder))
+        {
+            System.out.println(f.getName());
+            sendMultipleFiles(f);
+        }
+
     }
 
-    public void sendFile(String file) {
+    public void sendFile(File myFile) {
 
         try {
             inUseMutex.acquire();
@@ -162,7 +167,7 @@ public class Client implements Runnable {
         BufferedInputStream bis = null;
         BufferedOutputStream bos = null;
         DataOutputStream dos;
-        String imagePath = systemInfo.getPathForHomeAsString()  + file;
+        //String imagePath = systemInfo.getPathForHomeAsString()  + file;
         sendMessage("Sending...");
         try
         {
@@ -176,21 +181,25 @@ public class Client implements Runnable {
         sleepTime();
 
         try
-        {
+        {   System.out.println("Sending " + myFile.getCanonicalPath() + "(" + myFile.length() + " bytes)");
+
             DataInputStream streamIn  = new DataInputStream(socket.getInputStream());
+            while (!streamIn.readUTF().equals("Go")){}
+            if (myFile.length()> 150502457)
+                throw new FileNotFoundException();
+            sendMessage(myFile.getName()); //sending file name
 
-            sendMessage(file); //sending file name
 
-            File myFile = new File(imagePath);
             mybytearray = new byte[(int) myFile.length()];
             fis = new FileInputStream(myFile);
             bis = new BufferedInputStream(fis);
+
             bis.read(mybytearray, 0, mybytearray.length);
             sendMessage("ImageFound");
             mutexSend.acquire();
             long fileLength = myFile.length();
             dos.writeLong(fileLength);
-            System.out.println("Sending " + imagePath + "(" + mybytearray.length + " bytes)");
+
             bos.write(mybytearray, 0, mybytearray.length);
             bos.flush();
             System.out.println("Done.");
@@ -304,24 +313,17 @@ public class Client implements Runnable {
             while(sizeReceived<fileSize && (bytesRead = bis.read(buffer, 0, 8192))>0)
             {
                 sizeReceived += bytesRead;
-                //System.out.println(sizeReceived + " Available: " + bis.available() + "Count: " + bytesRead);
                 bos.write(buffer, 0, bytesRead);
                 bos.flush();
             }
             long estimatedTime = System.currentTimeMillis() - startTime;
             System.out.println("File " + IMAGE_TO_BE_RECEIVED + " downloaded (" + sizeReceived + " bytes read)"
                     + " Time Elapsed: " + estimatedTime/1000.0 );
-            if (fileSize != sizeReceived )
+            if (fileSize != sizeReceived ) {
                 System.out.println("malicious file sent");
-            /*if (imageCounter==99)
-            {
-                imageCounter = 0;
-                repeted++;
+                new File(IMAGE_TO_BE_RECEIVED).deleteOnExit();
             }
-            if (imageCounter<100)
-            {
-                send("server:" + "send");
-            }*/
+
         }
         catch (Exception e)
         {
@@ -349,7 +351,7 @@ public class Client implements Runnable {
     {
         try
         {
-            sleep(100);
+            sleep(500);
         }
         catch (InterruptedException e)
         {
@@ -359,9 +361,9 @@ public class Client implements Runnable {
 
     public static void main(String args[])
     {
-//        Client client = null;
+//        Slave client = null;
 //        try {
-//            client = new Client("172.16.4.6", 7777, new SystemInfo());
+//            client = new Slave("172.16.4.6", 7777, new SystemInfo());
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //        }

@@ -30,7 +30,7 @@ public class MainClass extends JFrame {
     private JTextField scriptsResults;
     private JFileChooser chooser;
     private String choosertitle;
-    private Client slave = null;
+    private Slave slave = null;
     private boolean isSlaveConnected = false;
     private JFrame ourJframe;
     private boolean isHidden = false;
@@ -154,7 +154,7 @@ public class MainClass extends JFrame {
     private void connectSlave(boolean t)
     {
         try {
-            slave = new Client(ipTextField.getText(), 7777, systemInfo, this);
+            slave = new Slave(ipTextField.getText(), 7777, systemInfo, this);
             connectStatusLabel.setText("Connected");
             connectStatusLabel.setForeground(Color.GREEN);
             isSlaveConnected = true;
@@ -168,7 +168,7 @@ public class MainClass extends JFrame {
                     while(true)
                     {
                         try {
-                            sleep(1000);
+                            sleep(60000);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }

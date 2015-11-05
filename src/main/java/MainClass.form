@@ -147,7 +147,7 @@
               </grid>
             </constraints>
             <properties>
-              <text value=""/>
+              <text value="Version!!"/>
             </properties>
           </component>
         </children>

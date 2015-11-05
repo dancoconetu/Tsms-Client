@@ -17,7 +17,7 @@ public class FolderInfo {
     {
         this.systemInfo = new SystemInfo();
          folderPath = systemInfo.getPathForHome();
-        String pythonExtension = "py";
+
     }
     //SystemInfo systemInfo = new SystemInfo();
 
@@ -77,5 +77,47 @@ public class FolderInfo {
 
     }
 
+
+
+    public ArrayList<File> getOnlyFiles(File file)
+    {   //folderPath = systemInfo.getPathForHome();
+        File folder = file;
+        File[] listOfFiles = folder.listFiles();
+        ArrayList<File> onlyFiles = new ArrayList<File>();
+
+        for (File f: listOfFiles)
+            if (f.isFile() && !f.isHidden())
+            {
+                onlyFiles.add(f);
+
+            }
+        return onlyFiles;
+    }
+
+
+    public boolean deleteFiles(ArrayList<File> files)
+    {   boolean t= false;
+        for (File f : files)
+        {
+             t= f.delete();
+        }
+
+        return t;
+    }
+
+    public ArrayList<File> getFolders(File file)
+    {
+        File folder = file;
+        File[] listOfFiles = folder.listFiles();
+        ArrayList<File> onlyFolders = new ArrayList<File>();
+
+        for (File f: listOfFiles)
+            if (f.isDirectory() && !f.isHidden())
+            {
+                onlyFolders.add(f);
+
+            }
+        return onlyFolders;
+    }
 
 }
