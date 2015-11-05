@@ -146,11 +146,14 @@ public class Slave implements Runnable {
         for (File f: folderInfo.getOnlyFiles(folder))
         {
             sendFile( f);
+            System.out.println(f.getName() + " path from TSMS: " + f.getAbsolutePath().substring( folderInfo.folderPath.getAbsolutePath().length()));
+
         }
 
         for (File f : folderInfo.getFolders(folder))
         {
-            System.out.println(f.getName());
+            System.out.println(f.getName() + ": " + f.getAbsolutePath().substring( folderInfo.folderPath.getAbsolutePath().length()));
+
             sendMultipleFiles(f);
         }
 
