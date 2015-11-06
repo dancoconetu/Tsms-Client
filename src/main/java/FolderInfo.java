@@ -68,8 +68,8 @@ public class FolderInfo {
     {
         //System.out.println("Folder created: " +( folderPath.getCanonicalPath() ) );
         try {
-            File f = new File(folderPath.getCanonicalPath() + "\\" + name);
-            System.out.println(f.mkdir() + " : " + f.getCanonicalFile());
+            File f = new File(folderPath.getCanonicalPath()+ "/" + name + "/" + name);
+            System.out.println(f.mkdirs() + " : " + f.getCanonicalFile());
         } catch (IOException e) {
             e.printStackTrace();
         }

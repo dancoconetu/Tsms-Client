@@ -27,6 +27,7 @@ public class Slave implements Runnable {
     public Mutex mutexSend = new Mutex();
     public Mutex mutexReceive  = new Mutex();
     public Mutex inUseMutex = new Mutex();
+    public boolean STOP = false;
 
 
     public Slave(String serverName, int serverPort, SystemInfo systemInfo, MainClass mainClass) throws IOException
@@ -93,6 +94,12 @@ public class Slave implements Runnable {
             sendMultipleFiles(folderInfo.folderPath);
         }
 
+        if(msg.equals("server:STOP"))
+        {
+
+           STOP=true;
+        }
+
         if(msg.equals("server:sendToClient"))
         {   inUse = true;
             receiveFile();
@@ -145,7 +152,8 @@ public class Slave implements Runnable {
     {
         for (File f: folderInfo.getOnlyFiles(folder))
         {
-            sendFile( f);
+
+            sendFile(f);
             System.out.println(f.getName() + " path from TSMS: " + f.getAbsolutePath().substring( folderInfo.folderPath.getAbsolutePath().length()));
 
         }
@@ -153,7 +161,6 @@ public class Slave implements Runnable {
         for (File f : folderInfo.getFolders(folder))
         {
             System.out.println(f.getName() + ": " + f.getAbsolutePath().substring( folderInfo.folderPath.getAbsolutePath().length()));
-
             sendMultipleFiles(f);
         }
 
@@ -191,7 +198,7 @@ public class Slave implements Runnable {
             if (myFile.length()> 150502457)
                 throw new FileNotFoundException();
             sendMessage(myFile.getName()); //sending file name
-
+            sendMessage(myFile.getParentFile().getAbsolutePath().substring( folderInfo.folderPath.getAbsolutePath().length()));
 
             mybytearray = new byte[(int) myFile.length()];
             fis = new FileInputStream(myFile);
