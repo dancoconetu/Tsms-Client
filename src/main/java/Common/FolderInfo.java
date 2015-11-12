@@ -1,25 +1,25 @@
+package Common;
+
+import Common.SystemInfo;
+
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by dic on 08-10-2015.
  */
 public class FolderInfo {
 
-    File folderPath;
-    SystemInfo systemInfo;
+    public File folderPath;
+    public SystemInfo systemInfo;
     public FolderInfo(SystemInfo systemInfo)
     {
         this.systemInfo = new SystemInfo();
          folderPath = systemInfo.getPathForHome();
 
     }
-    //SystemInfo systemInfo = new SystemInfo();
+    //Common.SystemInfo systemInfo = new Common.SystemInfo();
 
     public File[] getAllFolderFiles()
     {
@@ -70,6 +70,7 @@ public class FolderInfo {
         try {
             File f = new File(folderPath.getCanonicalPath()+ "/" + name + "/" + name);
             System.out.println(f.mkdirs() + " : " + f.getCanonicalFile());
+
         } catch (IOException e) {
             e.printStackTrace();
         }

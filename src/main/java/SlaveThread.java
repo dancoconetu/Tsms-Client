@@ -47,7 +47,7 @@ public class SlaveThread extends Thread
     {  slave.handle(streamIn.readUTF());
 
     }
-    catch(IOException ioe)
+    catch(Exception ioe)
     {
         System.out.println("Listening error: " + ioe.getMessage());
         System.out.println("step1");

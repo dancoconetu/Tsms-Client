@@ -2,6 +2,8 @@
  * Created by dic on 18-09-2015.
  */
 
+import Common.FolderInfo;
+import Common.SystemInfo;
 import com.sun.corba.se.impl.orbutil.concurrent.Mutex;
 
 import java.io.*;
@@ -24,9 +26,9 @@ public class Slave implements Runnable {
     public FolderInfo folderInfo;
     private MainClass mainClass;
     private boolean inUse = false;
-    public Mutex mutexSend = new Mutex();
+   // public Mutex mutexSend = new Mutex();
     public Mutex mutexReceive  = new Mutex();
-    public Mutex inUseMutex = new Mutex();
+    public Mutex mutexSend = new Mutex();
     public boolean STOP = false;
 
 
@@ -74,7 +76,7 @@ public class Slave implements Runnable {
         }
         else
         {
-            System.out.println(msg.substring(7));
+            System.out.println(msg);
            // sendMessage(msg.substring(7));
         }
 
@@ -88,7 +90,7 @@ public class Slave implements Runnable {
             sendMessage(handler.runScript("dd"));
         }
 
-        if(msg.equals("server:sendAll"))
+        if(msg.equals("server:2"))
         {
 
             sendMultipleFiles(folderInfo.folderPath);
@@ -148,6 +150,17 @@ public class Slave implements Runnable {
 
     }
 
+    public void sendMessageWithoutMutex(String message)
+    {
+        try {
+            streamOut.writeUTF(message);
+            streamOut.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+            stop();
+        }
+    }
+
     public void sendMultipleFiles(File folder)
     {
         for (File f: folderInfo.getOnlyFiles(folder))
@@ -169,7 +182,7 @@ public class Slave implements Runnable {
     public void sendFile(File myFile) {
 
         try {
-            inUseMutex.acquire();
+            mutexSend.acquire();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -178,7 +191,7 @@ public class Slave implements Runnable {
         BufferedOutputStream bos = null;
         DataOutputStream dos;
         //String imagePath = systemInfo.getPathForHomeAsString()  + file;
-        sendMessage("Sending...");
+        sendMessageWithoutMutex("Sending...");
         try
         {
             bos = new BufferedOutputStream(socket.getOutputStream());
@@ -194,19 +207,19 @@ public class Slave implements Runnable {
         {   System.out.println("Sending " + myFile.getCanonicalPath() + "(" + myFile.length() + " bytes)");
 
             DataInputStream streamIn  = new DataInputStream(socket.getInputStream());
-            while (!streamIn.readUTF().equals("Go")){}
+           // while (!streamIn.readUTF().equals("Go")){}
             if (myFile.length()> 150502457)
                 throw new FileNotFoundException();
-            sendMessage(myFile.getName()); //sending file name
-            sendMessage(myFile.getParentFile().getAbsolutePath().substring( folderInfo.folderPath.getAbsolutePath().length()));
+            sendMessageWithoutMutex(myFile.getName()); //sending file name
+            sendMessageWithoutMutex(myFile.getParentFile().getAbsolutePath().substring(folderInfo.folderPath.getAbsolutePath().length()));
 
             mybytearray = new byte[(int) myFile.length()];
             fis = new FileInputStream(myFile);
             bis = new BufferedInputStream(fis);
 
             bis.read(mybytearray, 0, mybytearray.length);
-            sendMessage("ImageFound");
-            mutexSend.acquire();
+            sendMessageWithoutMutex("ImageFound");
+
             long fileLength = myFile.length();
             dos.writeLong(fileLength);
 
@@ -221,7 +234,7 @@ public class Slave implements Runnable {
         {
             e.printStackTrace();
             System.out.println("File not found!");
-            sendMessage("ImageNotFound");
+            sendMessageWithoutMutex("ImageNotFound");
 
         }
         catch (Exception e)
@@ -233,18 +246,20 @@ public class Slave implements Runnable {
             System.out.println("sent");
             sleepTime();
 
+
             //sendMessage("succesfully sent");
-//             try {
-//                 if (bis != null) bis.close();
-//
-//
-//             } catch (IOException e) {
-//                e.printStackTrace();
-//            }
+             try {
+                 if (bis != null) bis.close();
+                 if (fis != null) fis.close();
+
+
+             } catch (IOException e) {
+                e.printStackTrace();
+            }
 
         }
 
-        inUseMutex.release();
+        mutexSend.release();
     }
 
     public void stop()
@@ -281,7 +296,7 @@ public class Slave implements Runnable {
     public void receiveFile()
     {
         try {
-            inUseMutex.acquire();
+            mutexReceive.acquire();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -295,44 +310,45 @@ public class Slave implements Runnable {
         }
         FileOutputStream fos = null;
         BufferedOutputStream bos = null;
+        String IMAGE_TO_BE_RECEIVED ="";
+        long sizeReceived = 0;
+        long fileSize = 0;
         try
-        {   sendMessage("Go");
-            System.out.println("Goooooooooooooooooooooooooooo");
+        {  // sendMessage("Go");
             long startTime = System.currentTimeMillis();
             BufferedInputStream bis = new BufferedInputStream(socket.getInputStream());
             DataInputStream dis = new DataInputStream(bis);
             String imageName = dis.readUTF();
+            String imagePath = dis.readUTF();
+            File path2 =  new File(folderInfo.folderPath + imagePath);
+            path2.mkdirs();
             String imageFound = dis.readUTF();
             System.out.println(imageFound);
             if (!imageFound.equals("ImageFound") || imageFound.equals("ImageNotFound")  )
             {
                 throw new Exception();
             }
-            String IMAGE_TO_BE_RECEIVED;
-            if (systemInfo.isWindows())
-            IMAGE_TO_BE_RECEIVED = folderInfo.folderPath + "\\"  + imageName ;
-            else
-                IMAGE_TO_BE_RECEIVED = folderInfo.folderPath + "/" +  imageName;
+            IMAGE_TO_BE_RECEIVED = path2.getCanonicalPath() + File.separator + imageName ;
             fos = new FileOutputStream(IMAGE_TO_BE_RECEIVED);
             bos = new BufferedOutputStream(fos);
-            long fileSize = dis.readLong();
+            fileSize = dis.readLong();
             System.out.println("File size: " + fileSize);
-            int sizeReceived = 0;
+            sizeReceived = 0;
             int bytesRead = 8192;
             byte[] buffer = new byte[bytesRead];
             while(sizeReceived<fileSize && (bytesRead = bis.read(buffer, 0, 8192))>0)
             {
                 sizeReceived += bytesRead;
+                //System.out.println(sizeReceived + " Available: " + bis.available() + "Count: " + bytesRead);
                 bos.write(buffer, 0, bytesRead);
                 bos.flush();
             }
             long estimatedTime = System.currentTimeMillis() - startTime;
-            System.out.println("File " + IMAGE_TO_BE_RECEIVED + " downloaded (" + sizeReceived + " bytes read)"
-                    + " Time Elapsed: " + estimatedTime/1000.0 );
-            if (fileSize != sizeReceived ) {
+            System.out.println("File " + IMAGE_TO_BE_RECEIVED + " downloaded (" + sizeReceived + " bytes read)" +
+                     " Time Elapsed: " + estimatedTime/1000.0 );
+            if (fileSize != sizeReceived )
                 System.out.println("malicious file sent");
-                new File(IMAGE_TO_BE_RECEIVED).deleteOnExit();
-            }
+
 
         }
         catch (Exception e)
@@ -345,7 +361,11 @@ public class Slave implements Runnable {
             {
                 if (bos != null) bos.close();
                 if (fos != null) fos.close();
-
+                if (fileSize != sizeReceived )
+                {
+                    System.out.println("malicious file sent");
+                    new File(IMAGE_TO_BE_RECEIVED).delete();
+                }
             }
             catch (IOException e)
             {
@@ -354,7 +374,7 @@ public class Slave implements Runnable {
         }
         inUse = false;
 
-        inUseMutex.release();
+        mutexReceive.release();
     }
 
     public void sleepTime()
@@ -373,7 +393,7 @@ public class Slave implements Runnable {
     {
 //        Slave client = null;
 //        try {
-//            client = new Slave("172.16.4.6", 7777, new SystemInfo());
+//            client = new Slave("172.16.4.6", 7777, new Common.SystemInfo());
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //        }

@@ -1,3 +1,5 @@
+import Common.SystemInfo;
+
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -54,7 +56,7 @@ public class MainClass extends JFrame {
         setIconImage(systemTrayIcon.CreateIcon("icon.png","app icon"));
 
         chooser = new JFileChooser();
-        chooser.setCurrentDirectory(new java.io.File("."));
+        chooser.setCurrentDirectory(new java.io.File(prefs.get(scriptPreferences, chooser.getCurrentDirectory().toString())));
         systemInfo  = new SystemInfo(chooser.getCurrentDirectory());
         chooser.setDialogTitle(choosertitle);
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -173,13 +175,13 @@ public class MainClass extends JFrame {
                             e.printStackTrace();
                         }
                         try {
-                            slave.inUseMutex.acquire();
+                            slave.mutexSend.acquire();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                         slave.sendMessage("Rain Check");
                         //System.out.println("rain check sent");
-                        slave.inUseMutex.release();
+                        slave.mutexSend.release();
                         //System.out.println(slave.isAlive());
 
                         //if (!slave.isAlive())
