@@ -106,15 +106,7 @@ public class Slave implements Runnable {
         {   inUse = true;
             receiveFile();
         }
-        if(msg.equals("server:xml"))
-        {
-            XMLCreator xmlCreator = new XMLCreator();
-            System.out.println("Xml: " + xmlCreator.createScriptRunningXML("hello", "2.7.0", folderInfo.getAllFilesWithExtension("IIQ"), "py"));
-            System.out.println("the Second xml: " + xmlCreator.createSendFilesXml(folderInfo.getAllFilesWithExtension("IIQ")));
-            handler.handleXml(xmlCreator.createScriptRunningXML("hello", "2.7.0", folderInfo.getAllFilesWithExtension("IIQ"), "py"));
-            String[][] list=  handler.handleXml(xmlCreator.createSendFilesXml(folderInfo.getAllFilesWithExtension("IIQ")));
-            handler.getMissingFiles(list, folderInfo.getAllFilesWithExtension("IIQ"));
-        }
+
     }
 
     public void start() throws IOException

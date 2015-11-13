@@ -1,3 +1,4 @@
+import Common.FolderInfo;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -19,9 +20,11 @@ public class XMLCreator {
 
     DocumentBuilderFactory docFactory;
     DocumentBuilder docBuilder;
-    public XMLCreator()
+    FolderInfo folderInfo;
+    public XMLCreator(FolderInfo _folderInfo)
     {
-         docFactory = DocumentBuilderFactory.newInstance();
+        folderInfo = _folderInfo;
+        docFactory = DocumentBuilderFactory.newInstance();
         try {
             docBuilder = docFactory.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
@@ -29,76 +32,67 @@ public class XMLCreator {
         }
     }
 
-    public String createScriptRunningXML( String scriptName, String scriptVersion,
-                                         ArrayList<File> filesArray, String resultExtension)
+    public String createScriptRunningXML( File script, String scriptLanguage,
+                                          String resultExtension)
     {
         Document doc = docBuilder.newDocument();
-        Element rootElement = doc.createElement("Command");
+        Element rootElement = doc.createElement("RunScript");
         doc.appendChild(rootElement);
 
-        Attr attrTaskType = doc.createAttribute("TaskType");
-        attrTaskType.setValue("RunScript");
-        rootElement.setAttributeNode(attrTaskType);
+
 
         Attr attrScriptName = doc.createAttribute("ScriptName");
-        attrScriptName.setValue(scriptName);
+        attrScriptName.setValue(script.getName());
         rootElement.setAttributeNode(attrScriptName);
 
+        Attr scriptPath = doc.createAttribute("FilePath");
+        scriptPath.setValue(script.getAbsolutePath().substring(folderInfo.folderPath.getAbsolutePath().length()));
+        rootElement.setAttributeNode(scriptPath);
+
+
         Attr attrScriptVersion = doc.createAttribute("ScriptVersion");
-        attrScriptVersion.setValue(scriptVersion);
+        attrScriptVersion.setValue(scriptLanguage);
         rootElement.setAttributeNode(attrScriptVersion);
 
         Attr attrResultExtension = doc.createAttribute("ResultExtension");
         attrResultExtension.setValue(resultExtension);
         rootElement.setAttributeNode(attrResultExtension);
 
-        Element elementFilesArray = doc.createElement("FilesArray");
-        for (File file : filesArray)
-        {   Element fileElement = doc.createElement("File");
-            Attr attrFile = doc.createAttribute("FileName");
-            attrFile.setValue(file.getName());
-
-            //System.out.println(file.getName());
-            fileElement.setAttributeNode(attrFile);
+//        Attr attrResultFolder = doc.createAttribute("ResultFolder");
+//        attrResultFolder.setValue(resultFolder);
+//        rootElement.setAttributeNode(attrResultFolder);
 
 
-            Attr attrSize = doc.createAttribute("FileSize");
-            attrSize.setValue(file.length() + "");
-            fileElement.setAttributeNode(attrSize);
-
-
-            elementFilesArray.appendChild(fileElement);
-        }
-        rootElement.appendChild(elementFilesArray);
 
 
         return createStringFromXmlDoc(doc);
     }
 
 
-    public String createSendFilesXml(ArrayList<File> filesArray)
+    public String createSendMultipleFilesXml(ArrayList<File> filesArray)
     {
         Document doc = docBuilder.newDocument();
-        Element rootElement = doc.createElement("Command");
+        Element rootElement = doc.createElement("SendMultipleFiles");
         doc.appendChild(rootElement);
 
-        Attr attrTaskType = doc.createAttribute("TaskType");
-        attrTaskType.setValue("SendFiles");
-        rootElement.setAttributeNode(attrTaskType);
+
 
         Element elementFilesArray = doc.createElement("FilesArray");
         for (File file : filesArray)
         {   Element fileElement = doc.createElement("File");
-            Attr attrFile = doc.createAttribute("FileName");
-            attrFile.setValue(file.getName());
 
-            //System.out.println(file.getName());
-            fileElement.setAttributeNode(attrFile);
+            Attr fileName = doc.createAttribute("FileName");
+            fileName.setValue(file.getName());
+            fileElement.setAttributeNode(fileName);
 
+            Attr fileSize = doc.createAttribute("FileSize");
+            fileSize.setValue(file.length() + "");
+            fileElement.setAttributeNode(fileSize);
 
-            Attr attrSize = doc.createAttribute("FileSize");
-            attrSize.setValue(file.length() + "");
-            fileElement.setAttributeNode(attrSize);
+            Attr filePath = doc.createAttribute("FilePath");
+            filePath.setValue(file.getAbsolutePath().substring( folderInfo.folderPath.getAbsolutePath().length()));
+            fileElement.setAttributeNode(filePath);
+
 
 
             elementFilesArray.appendChild(fileElement);
@@ -127,4 +121,60 @@ public class XMLCreator {
         return writer.getBuffer().toString().replaceAll("\n|\r", "");
 
     }
+
+
+
+    public String createSendFileXMLDoc(File file)
+    {
+        Document doc = docBuilder.newDocument();
+        Element rootElement = doc.createElement("SendFile");
+        doc.appendChild(rootElement);
+
+        Attr fileName = doc.createAttribute("FileName");
+        fileName.setValue(file.getName());
+        rootElement.setAttributeNode(fileName);
+
+        Attr fileSize = doc.createAttribute("FileSize");
+        fileSize.setValue(file.length()+"");
+        rootElement.setAttributeNode(fileSize);
+
+        Attr filePath = doc.createAttribute("FilePath");
+        filePath.setValue(file.getAbsolutePath().substring( folderInfo.folderPath.getAbsolutePath().length()));
+        rootElement.setAttributeNode(filePath);
+
+
+        return createStringFromXmlDoc(doc);
+    }
+
+
+    public String sendOsInfo(ArrayList<String> listScriptLanguages, String pcName, String osName)
+    {
+        Document doc = docBuilder.newDocument();
+        Element rootElement = doc.createElement("SendOsInfo");
+        doc.appendChild(rootElement);
+
+        Attr attrPcName = doc.createAttribute("PcName");
+        attrPcName.setValue(pcName);
+        rootElement.setAttributeNode(attrPcName);
+
+        Attr attrOsName = doc.createAttribute("OsName");
+        attrOsName.setValue(osName);
+        rootElement.setAttributeNode(attrOsName);
+
+        Element elementFilesArray = doc.createElement("ScriptLanguages");
+        for (String scriptLanguage : listScriptLanguages)
+        {    Element fileElement = doc.createElement("ScriptLanguage");
+            fileElement.setAttribute("Location", scriptLanguage);
+            elementFilesArray.appendChild(fileElement);
+        }
+
+        rootElement.appendChild(elementFilesArray);
+
+
+        return createStringFromXmlDoc(doc);
+    }
+
+
+
+
 }
