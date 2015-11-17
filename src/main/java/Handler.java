@@ -1,3 +1,4 @@
+import Common.FolderInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -161,33 +162,49 @@ public class Handler {
         return list;
     }
 
-    public String[][] getMissingFiles(String[][] stringFileList, ArrayList<File> fileList)
+    public ArrayList<File> getMissingFiles(String[][] stringFileList, ArrayList<File> fileList, FolderInfo folderInfo)
     {
-        String[][] stringFilesMissing= new String[stringFileList.length][2];
+        ArrayList<File> stringFilesMissing= new ArrayList<File>();
         int j =0;
         for (int i=0; i<stringFileList.length; i++)
-        {
-            if (!isFilePresent(stringFileList[i][0], stringFileList[i][1], fileList))
-            {
-                stringFilesMissing[j][0] = stringFileList[i][0];
-                stringFilesMissing[j][1] = stringFileList[i][1];
-                j++;
-            }
+        {   System.out.println("Path from PC"  + stringFileList[i][2]);
+            stringFileList[i][2] = stringFileList[i][2].replace("\\", File.separator);
+            System.out.println("Path from PC altered" + stringFileList[i][2]);
+            File path2 =  new File(folderInfo.folderPath + stringFileList[i][2]);
+            System.out.println("Path after: " + path2.getAbsolutePath());
+            File file = new File(path2.getAbsolutePath() + File.separator + stringFileList[i][0]);
+                if (!file.exists())
+                {
+                    stringFilesMissing.add(file);
+                    System.out.println(j++);
+                }
+            else
+                {
+                    if (file.length()!= Long.parseLong(stringFileList[i][1]))
+                    {
+                        stringFilesMissing.add(file);
+                        System.out.println(j++);
+                    }
+                }
+           // if (!isFilePresent(stringFileList[i][0], stringFileList[i][1], fileList))
+
         }
 
         return stringFilesMissing;
     }
 
 
-    private boolean isFilePresent(String fileName, String fileSize, ArrayList<File> fileList )
+    private boolean isFilePresent(String fileName, String fileSize, String filePath , ArrayList<File> fileList )
     {
 
         for (File f: fileList)
         {
             if (f.getName().equals(fileName))
             {
+
                 if ((f.length()+"").equals(fileSize))
                 {   System.out.println("Counter: " + ++counter);
+
                     return true;
                 }
             }

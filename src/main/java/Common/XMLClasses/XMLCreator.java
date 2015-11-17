@@ -1,3 +1,5 @@
+package Common.XMLClasses;
+
 import Common.FolderInfo;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -90,7 +92,7 @@ public class XMLCreator {
             fileElement.setAttributeNode(fileSize);
 
             Attr filePath = doc.createAttribute("FilePath");
-            filePath.setValue(file.getAbsolutePath().substring( folderInfo.folderPath.getAbsolutePath().length()));
+            filePath.setValue(file.getParentFile().getAbsolutePath().substring( folderInfo.folderPath.getAbsolutePath().length()));
             fileElement.setAttributeNode(filePath);
 
 
@@ -139,7 +141,7 @@ public class XMLCreator {
         rootElement.setAttributeNode(fileSize);
 
         Attr filePath = doc.createAttribute("FilePath");
-        filePath.setValue(file.getAbsolutePath().substring( folderInfo.folderPath.getAbsolutePath().length()));
+        filePath.setValue(file.getParentFile().getAbsolutePath().substring( folderInfo.folderPath.getAbsolutePath().length()));
         rootElement.setAttributeNode(filePath);
 
 

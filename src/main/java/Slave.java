@@ -4,10 +4,14 @@
 
 import Common.FolderInfo;
 import Common.SystemInfo;
+import Common.XMLClasses.XMLCreator;
+import Common.XMLClasses.XMLParser;
 import com.sun.corba.se.impl.orbutil.concurrent.Mutex;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Hashtable;
 
 import static java.lang.Thread.sleep;
 
@@ -54,7 +58,12 @@ public class Slave implements Runnable {
         {
             try
             {
-                streamOut.writeUTF(console.readLine());
+                String s= console.readLine();
+                if(s.equals("2"))
+                {   System.out.println("wtf?");
+                    sendMultipleFiles(folderInfo.folderPath);
+                }
+                streamOut.writeUTF(s);
                 streamOut.flush();
             }
             catch (IOException ioe)
@@ -68,6 +77,12 @@ public class Slave implements Runnable {
 
     public void handle(String msg)
     {
+        try {
+            mutexReceive.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        XMLParser xmlParser = new XMLParser();
         Handler handler = new Handler(this);
         if (msg.equals(".bye"))
         {
@@ -102,10 +117,29 @@ public class Slave implements Runnable {
            STOP=true;
         }
 
-        if(msg.equals("server:sendToClient"))
-        {   inUse = true;
-            receiveFile();
+
+
+        if(msg.contains("<SendFile"))
+        {
+
+            Hashtable hashtable = xmlParser.parseSendFile(msg);
+            receiveFile(hashtable.get("FileName").toString(), hashtable.get("FilePath").toString(), Long.parseLong(hashtable.get("FileSize").toString()) );
         }
+
+        if(msg.contains("<SendMultipleFiles"))
+        {
+            String[][] filesInMaster = xmlParser.parseSendMultipleFiles(msg);
+            ArrayList<File> availableFiles = new ArrayList<File>();
+            folderInfo.listf(folderInfo.folderPath.toString(), availableFiles);
+            ArrayList<File> missingFiles = handler.getMissingFiles(filesInMaster, availableFiles,folderInfo);
+            System.out.println("Missings files nr: " + missingFiles.size());
+            XMLCreator xmlCreator = new XMLCreator(folderInfo);
+            String xmlFilesMissing = xmlCreator.createSendMultipleFilesXml(missingFiles);
+            System.out.println(xmlFilesMissing);
+            sendMessage(xmlFilesMissing);
+        }
+
+        mutexReceive.release();
 
     }
 
@@ -125,17 +159,18 @@ public class Slave implements Runnable {
 
     public void sendMessage(String message) {
         try
-        {   mutexSend.acquire();
+        {  // mutexSend.acquire();
             streamOut.writeUTF(message);
             streamOut.flush();
-            mutexSend.release();
+          //  mutexSend.release();
         }
         catch (IOException e)
         {
             e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
+//        catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
         finally {
 
         }
@@ -171,8 +206,12 @@ public class Slave implements Runnable {
 
     }
 
-    public void sendFile(File myFile) {
-
+    public void sendFile(File myFile)
+    {
+        XMLCreator xmlCreator = new XMLCreator(folderInfo);
+        String fileXml = xmlCreator.createSendFileXMLDoc(myFile);
+        sendMessage(fileXml);
+        System.out.println(fileXml);
         try {
             mutexSend.acquire();
         } catch (InterruptedException e) {
@@ -183,7 +222,7 @@ public class Slave implements Runnable {
         BufferedOutputStream bos = null;
         DataOutputStream dos;
         //String imagePath = systemInfo.getPathForHomeAsString()  + file;
-        sendMessageWithoutMutex("Sending...");
+        //sendMessageWithoutMutex("Sending...");
         try
         {
             bos = new BufferedOutputStream(socket.getOutputStream());
@@ -200,20 +239,19 @@ public class Slave implements Runnable {
 
             DataInputStream streamIn  = new DataInputStream(socket.getInputStream());
            // while (!streamIn.readUTF().equals("Go")){}
-            if (myFile.length()> 150502457)
-                throw new FileNotFoundException();
-            sendMessageWithoutMutex(myFile.getName()); //sending file name
-            sendMessageWithoutMutex(myFile.getParentFile().getAbsolutePath().substring(folderInfo.folderPath.getAbsolutePath().length()));
+
+            //sendMessageWithoutMutex(myFile.getName()); //sending file name
+            //sendMessageWithoutMutex(myFile.getParentFile().getAbsolutePath().substring(folderInfo.folderPath.getAbsolutePath().length()));
 
             mybytearray = new byte[(int) myFile.length()];
             fis = new FileInputStream(myFile);
             bis = new BufferedInputStream(fis);
 
             bis.read(mybytearray, 0, mybytearray.length);
-            sendMessageWithoutMutex("ImageFound");
+            //sendMessageWithoutMutex("ImageFound");
 
             long fileLength = myFile.length();
-            dos.writeLong(fileLength);
+            //dos.writeLong(fileLength);
 
             bos.write(mybytearray, 0, mybytearray.length);
             bos.flush();
@@ -226,7 +264,7 @@ public class Slave implements Runnable {
         {
             e.printStackTrace();
             System.out.println("File not found!");
-            sendMessageWithoutMutex("ImageNotFound");
+            //sendMessageWithoutMutex("ImageNotFound");
 
         }
         catch (Exception e)
@@ -285,13 +323,13 @@ public class Slave implements Runnable {
 
     }
 
-    public void receiveFile()
+    public void receiveFile(String imageName, String imagePath, long fileSize)
     {
-        try {
-            mutexReceive.acquire();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            mutexReceive.acquire();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
         try
         {
             sleep(500);
@@ -304,26 +342,27 @@ public class Slave implements Runnable {
         BufferedOutputStream bos = null;
         String IMAGE_TO_BE_RECEIVED ="";
         long sizeReceived = 0;
-        long fileSize = 0;
+        //long fileSize = 0;
         try
         {  // sendMessage("Go");
             long startTime = System.currentTimeMillis();
             BufferedInputStream bis = new BufferedInputStream(socket.getInputStream());
             DataInputStream dis = new DataInputStream(bis);
-            String imageName = dis.readUTF();
-            String imagePath = dis.readUTF();
+            //String imageName = dis.readUTF();
+           // String imagePath = dis.readUTF();
+            imagePath = imagePath.replace("\\", File.separator);
             File path2 =  new File(folderInfo.folderPath + imagePath);
             path2.mkdirs();
-            String imageFound = dis.readUTF();
-            System.out.println(imageFound);
-            if (!imageFound.equals("ImageFound") || imageFound.equals("ImageNotFound")  )
-            {
-                throw new Exception();
-            }
+//            String imageFound = dis.readUTF();
+//            System.out.println(imageFound);
+//            if (!imageFound.equals("ImageFound") || imageFound.equals("ImageNotFound")  )
+//            {
+//                throw new Exception();
+//            }
             IMAGE_TO_BE_RECEIVED = path2.getCanonicalPath() + File.separator + imageName ;
             fos = new FileOutputStream(IMAGE_TO_BE_RECEIVED);
             bos = new BufferedOutputStream(fos);
-            fileSize = dis.readLong();
+            //fileSize = dis.readLong();
             System.out.println("File size: " + fileSize);
             sizeReceived = 0;
             int bytesRead = 8192;
@@ -366,7 +405,7 @@ public class Slave implements Runnable {
         }
         inUse = false;
 
-        mutexReceive.release();
+        //mutexReceive.release();
     }
 
     public void sleepTime()
