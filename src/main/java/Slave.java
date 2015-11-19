@@ -34,6 +34,9 @@ public class Slave implements Runnable {
     public Mutex mutexReceive  = new Mutex();
     public Mutex mutexSend = new Mutex();
     public boolean STOP = false;
+    public Socket socketFilesSend;
+    public Socket socketFilesReceive;
+    private int filesCount;
 
 
     public Slave(String serverName, int serverPort, SystemInfo systemInfo, MainClass mainClass) throws IOException
@@ -42,9 +45,17 @@ public class Slave implements Runnable {
             System.out.println("Establishing connection. Please wait ...");
             this.systemInfo = systemInfo;
             folderInfo = new FolderInfo(systemInfo);
-            socket = new Socket(serverName, serverPort);
+        socket = new Socket(serverName, serverPort);
+
             System.out.println("Connected: " + socket);
+            socketFilesSend = new Socket(serverName,serverPort);
+        new DataOutputStream(socketFilesSend.getOutputStream()).writeUTF("FileSocketSend");
+
+        socketFilesReceive = new Socket(serverName, serverPort);
+        new DataOutputStream(socketFilesReceive.getOutputStream()).writeUTF("FileSocketReceive");
+
             start();
+        sendMessage("StringSocket");
 
     }
 
@@ -53,7 +64,8 @@ public class Slave implements Runnable {
         out.println("output");
         return !out.checkError();
     }
-    public void run() {
+    public void run()
+    {
         while (thread != null)
         {
             try
@@ -61,8 +73,11 @@ public class Slave implements Runnable {
                 String s= console.readLine();
                 if(s.equals("2"))
                 {   System.out.println("wtf?");
+                    filesCount =0;
                     sendMultipleFiles(folderInfo.folderPath);
+                    System.out.println("Files sent: "  + filesCount);
                 }
+
                 streamOut.writeUTF(s);
                 streamOut.flush();
             }
@@ -159,10 +174,13 @@ public class Slave implements Runnable {
 
     public void sendMessage(String message) {
         try
-        {  // mutexSend.acquire();
+        {
+//            mutexSend.acquire();
             streamOut.writeUTF(message);
             streamOut.flush();
-          //  mutexSend.release();
+            System.out.println(" \n \n Message: \n" + message + "\n \n ");
+
+              mutexSend.release();
         }
         catch (IOException e)
         {
@@ -213,6 +231,11 @@ public class Slave implements Runnable {
         sendMessage(fileXml);
         System.out.println(fileXml);
         try {
+            while(!new DataInputStream(socketFilesSend.getInputStream()).readUTF().equals(myFile.getName()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
             mutexSend.acquire();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -225,7 +248,7 @@ public class Slave implements Runnable {
         //sendMessageWithoutMutex("Sending...");
         try
         {
-            bos = new BufferedOutputStream(socket.getOutputStream());
+            bos = new BufferedOutputStream(socketFilesSend.getOutputStream());
         }
         catch (IOException e)
         {
@@ -237,11 +260,6 @@ public class Slave implements Runnable {
         try
         {   System.out.println("Sending " + myFile.getCanonicalPath() + "(" + myFile.length() + " bytes)");
 
-            DataInputStream streamIn  = new DataInputStream(socket.getInputStream());
-           // while (!streamIn.readUTF().equals("Go")){}
-
-            //sendMessageWithoutMutex(myFile.getName()); //sending file name
-            //sendMessageWithoutMutex(myFile.getParentFile().getAbsolutePath().substring(folderInfo.folderPath.getAbsolutePath().length()));
 
             mybytearray = new byte[(int) myFile.length()];
             fis = new FileInputStream(myFile);
@@ -274,13 +292,15 @@ public class Slave implements Runnable {
         finally
         {
             System.out.println("sent");
-            sleepTime();
+//            sleepTime();
+            filesCount++;
 
 
             //sendMessage("succesfully sent");
              try {
                  if (bis != null) bis.close();
                  if (fis != null) fis.close();
+
 
 
              } catch (IOException e) {
@@ -330,14 +350,14 @@ public class Slave implements Runnable {
 //        } catch (InterruptedException e) {
 //            e.printStackTrace();
 //        }
-        try
-        {
-            sleep(500);
-        }
-        catch (InterruptedException e)
-        {
-            e.printStackTrace();
-        }
+//        try
+//        {
+//            sleep(500);
+//        }
+//        catch (InterruptedException e)
+//        {
+//            e.printStackTrace();
+//        }
         FileOutputStream fos = null;
         BufferedOutputStream bos = null;
         String IMAGE_TO_BE_RECEIVED ="";
@@ -346,7 +366,7 @@ public class Slave implements Runnable {
         try
         {  // sendMessage("Go");
             long startTime = System.currentTimeMillis();
-            BufferedInputStream bis = new BufferedInputStream(socket.getInputStream());
+            BufferedInputStream bis = new BufferedInputStream(socketFilesReceive.getInputStream());
             DataInputStream dis = new DataInputStream(bis);
             //String imageName = dis.readUTF();
            // String imagePath = dis.readUTF();
@@ -359,6 +379,7 @@ public class Slave implements Runnable {
 //            {
 //                throw new Exception();
 //            }
+            sleepTime();
             IMAGE_TO_BE_RECEIVED = path2.getCanonicalPath() + File.separator + imageName ;
             fos = new FileOutputStream(IMAGE_TO_BE_RECEIVED);
             bos = new BufferedOutputStream(fos);
@@ -394,7 +415,7 @@ public class Slave implements Runnable {
                 if (fos != null) fos.close();
                 if (fileSize != sizeReceived )
                 {
-                    System.out.println("malicious file sent");
+                    System.out.println("\n\n\n\n-----------------------malicious file sent: + " +  IMAGE_TO_BE_RECEIVED + "-------------------------\n\n\n\n");
                     new File(IMAGE_TO_BE_RECEIVED).delete();
                 }
             }

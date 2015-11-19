@@ -174,14 +174,10 @@ public class MainClass extends JFrame {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        try {
-                            slave.mutexSend.acquire();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+
                         slave.sendMessage("Rain Check");
                         //System.out.println("rain check sent");
-                        slave.mutexSend.release();
+                       
                         //System.out.println(slave.isAlive());
 
                         //if (!slave.isAlive())
