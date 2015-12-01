@@ -21,10 +21,6 @@ public class Slave implements Runnable {
     private DataInputStream console = null;
     private DataOutputStream streamOut = null;
     private SlaveThread client = null;
-    private String FILE_TO_SEND = "C:\\Users\\dic\\Heroeswithin_roshan.mp3";
-    private String IMAGE_TO_SEND = "C:\\Users\\dic\\tsms-client-1.0-SNAPSHOT-jar-with-dependencies.jar";
-    private String IMAGE_TO_SEND_WINDOWS = "C:\\Users\\dic\\CF000037.IIQ";
-    private String IMAGE_TO_SEND_MAC = "/Users/testdepartment/Desktop/LEA-Credo40-L.IIQ";
     private byte[] mybytearray;
     public SystemInfo systemInfo;
     public FolderInfo folderInfo;
@@ -45,7 +41,7 @@ public class Slave implements Runnable {
             System.out.println("Establishing connection. Please wait ...");
             this.systemInfo = systemInfo;
             folderInfo = new FolderInfo(systemInfo);
-        socket = new Socket(serverName, serverPort);
+            socket = new Socket(serverName, serverPort);
 
             System.out.println("Connected: " + socket);
             socketFilesSend = new Socket(serverName,serverPort);
