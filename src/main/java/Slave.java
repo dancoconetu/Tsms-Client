@@ -150,6 +150,15 @@ public class Slave implements Runnable {
             sendMessage(xmlFilesMissing);
         }
 
+
+        if(msg.contains("SendOsInfo"))
+        {   XMLCreator xmlCreator = new XMLCreator(folderInfo);
+            String xmlToSend = xmlCreator.sendOsInfo(new ArrayList<String>(), systemInfo.getPcName(), systemInfo.getOs());
+
+            sendMessage(xmlToSend);
+        }
+
+
         mutexReceive.release();
 
     }

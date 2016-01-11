@@ -46,7 +46,7 @@ public class Handler {
         Process p = null;
         try {
             if(slave.systemInfo.isWindows())
-            p = r.exec("cmd.exe /c C:\\Python34\\python.exe hello.py ");
+            p = r.exec("cmd.exe /c C:\\Python\\python.exe C:\\TEST_EXAMPLE\\testsuite_execute.py  ");
             else
                 p = r.exec("ls /Users/testdepartment/Desktop");
 

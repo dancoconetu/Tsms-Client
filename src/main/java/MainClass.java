@@ -260,12 +260,12 @@ public class MainClass extends JFrame {
 
     public static void main(String[] args)
     {
-        try {
-            new ServerSocket(10000);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(0);
-        }
+//        try {
+//            new ServerSocket(11000);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            System.exit(0);
+//        }
 //        JFrame jFrame = new JFrame("TSMS Slave");
 //
 //        jFrame.setContentPane(new MainClass().panel1);

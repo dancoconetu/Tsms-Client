@@ -1,6 +1,8 @@
 package Common;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * Created by dic on 08-10-2015.
@@ -68,6 +70,27 @@ public class SystemInfo {
 
         return (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0 );
 
+    }
+
+    public String getOs()
+    {
+        return OS;
+    }
+
+
+    public String getPcName()
+    {
+
+        InetAddress addr = null;
+        try {
+            addr = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        if (addr!=null)
+        return  addr.getHostName();
+        else
+            return "Unknown";
     }
 
 
