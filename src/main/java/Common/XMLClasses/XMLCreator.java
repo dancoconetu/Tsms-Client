@@ -104,6 +104,39 @@ public class XMLCreator {
     }
 
 
+    public String createAvailablePythonScript(ArrayList<File> filesArray)
+    {
+        Document doc = docBuilder.newDocument();
+        Element rootElement = doc.createElement("PythonScripts");
+        doc.appendChild(rootElement);
+
+
+
+        Element elementFilesArray = doc.createElement("FilesArray");
+        for (File file : filesArray)
+        {   Element fileElement = doc.createElement("File");
+
+            Attr fileName = doc.createAttribute("FileName");
+            fileName.setValue(file.getName());
+            fileElement.setAttributeNode(fileName);
+
+            Attr fileSize = doc.createAttribute("FileSize");
+            fileSize.setValue(file.length() + "");
+            fileElement.setAttributeNode(fileSize);
+
+            Attr filePath = doc.createAttribute("FilePath");
+            filePath.setValue(file.getAbsolutePath());
+            fileElement.setAttributeNode(filePath);
+
+
+
+            elementFilesArray.appendChild(fileElement);
+        }
+        rootElement.appendChild(elementFilesArray);
+        return createStringFromXmlDoc(doc);
+    }
+
+
     public String createStringFromXmlDoc(Document doc)
     {
         TransformerFactory tf = TransformerFactory.newInstance();

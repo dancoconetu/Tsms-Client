@@ -1,3 +1,4 @@
+import Common.Chronometer;
 import Common.FolderInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -44,16 +45,21 @@ public class Handler {
     {
         Runtime r = Runtime.getRuntime();
         Process p = null;
+        Chronometer chronometer = new Chronometer();
+        chronometer.start();
         try {
             if(slave.systemInfo.isWindows())
-            p = r.exec("cmd.exe /c C:\\Python\\python.exe C:\\TEST_EXAMPLE\\testsuite_execute.py  ");
+            p = r.exec("cmd.exe /c C:\\Python\\python.exe " + scriptName);
             else
-                p = r.exec("ls /Users/testdepartment/Desktop");
+                p = r.exec("python " + scriptName);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
         BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        BufferedReader stdError = new BufferedReader(new
+                InputStreamReader(p.getErrorStream()));
+
         try {
             System.out.println("Waiting for batch file ...");
             p.waitFor();
@@ -61,19 +67,36 @@ public class Handler {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        chronometer.stop();
         String line = "";
 
         try {
             while (br.ready())
             {
                     String s = br.readLine();
+                if(s==null)
+                    break;
                     System.out.println(s);
                     line+=s + "\n";
+
+            }
+
+            line+= "----------------------Errors-------------------\n";
+            while(stdError.ready())
+            {
+                String s = br.readLine();
+
+                System.out.println(s);
+                line+=s + "\n";
+                if(s==null)
+                    break;
             }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        line+= "\n\nTotal time:" + chronometer.getSeconds() + " seconds";
 
         return line;
     }

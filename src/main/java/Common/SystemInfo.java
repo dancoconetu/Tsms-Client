@@ -1,8 +1,12 @@
 package Common;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 
 /**
  * Created by dic on 08-10-2015.
@@ -92,6 +96,91 @@ public class SystemInfo {
         else
             return "Unknown";
     }
+
+    public ArrayList<String> getPythonVersionWindows()
+    {
+        ArrayList<String> pythonVersions = new ArrayList<String>();
+        File c = new File("C:\\");
+        for ( File file: c.listFiles())
+        {
+            if (file.getName().toLowerCase().contains("python"))
+            {
+                pythonVersions.add(file.getName());
+            }
+        }
+
+        return pythonVersions;
+    }
+
+    public String getPythonVersionsMac() {
+
+
+
+            Runtime r = Runtime.getRuntime();
+            Process p = null;
+
+            try {
+
+
+                p = r.exec("python -V ");
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+
+
+            String line = "";
+            String mainPythonVersion="";
+            try {
+                mainPythonVersion = br.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            try {
+
+
+                p = r.exec("python -V ");
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String secondaryPythonVersion="";
+            try {
+                secondaryPythonVersion = br.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (mainPythonVersion.contains("Python 2"))
+            {
+                if (secondaryPythonVersion.contains("Python 3"))
+                    return "python3";
+                else
+                    return "noPython3";
+            }
+            else
+            {
+                if (mainPythonVersion.contains("Python 3"))
+                {
+                    if (secondaryPythonVersion.contains("Python 2"))
+                        return "python2";
+                        else
+                        return "noPython2";
+
+                }
+                else
+                    return "noPythonAtAll";
+            }
+
+        }
+
+
+
+
 
 
 

@@ -137,7 +137,7 @@
               </grid>
             </constraints>
             <properties>
-              <text value="172.16.4.6"/>
+              <text value=""/>
             </properties>
           </component>
           <component id="c2867" class="javax.swing.JTextField" binding="scriptsResults">
