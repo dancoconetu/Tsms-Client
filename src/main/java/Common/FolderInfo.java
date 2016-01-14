@@ -55,6 +55,37 @@ public class FolderInfo {
         return allFilesWithExtension;
     }
 
+    public ArrayList<File> getAllFilesWithExtension(String extension, File folder)
+    {   //folderPath = systemInfo.getPathForHome();
+
+        File[] listOfFiles = folder.listFiles();
+        ArrayList<File> allFilesWithExtension = new ArrayList<File>();
+
+        for (int i = 0; i < listOfFiles.length; i++)
+            if (getFileExtension(listOfFiles[i]).equals(extension))
+            {
+                allFilesWithExtension.add( listOfFiles[i]);
+
+            }
+        return allFilesWithExtension;
+    }
+
+    public ArrayList<File> getAllFilesWithExtensionFromSubfolders(String extension)
+    {   //folderPath = systemInfo.getPathForHome();
+        File folder = folderPath;
+
+        ArrayList<File> allFilesWithExtension = new ArrayList<File>();
+        ArrayList<File> listOfFiles = new ArrayList<File>();
+        listf(folder.getPath(),listOfFiles );
+        for (File f: listOfFiles)
+            if (getFileExtension(f).equals(extension))
+            {
+                allFilesWithExtension.add(f);
+
+            }
+        return allFilesWithExtension;
+    }
+
     private String getFileExtension(File file) {
         String name = file.getName();
         try {

@@ -41,7 +41,7 @@ public class Handler {
 
     }
 
-    public String runScript(String scriptName)
+    public String runScript(String scriptName, String python)
     {
         Runtime r = Runtime.getRuntime();
         Process p = null;
@@ -49,9 +49,19 @@ public class Handler {
         chronometer.start();
         try {
             if(slave.systemInfo.isWindows())
-            p = r.exec("cmd.exe /c C:\\Python\\python.exe " + scriptName);
-            else
-                p = r.exec("python " + scriptName);
+            {
+                File c = new File("C:\\");
+                for ( File file: c.listFiles())
+                    if (file.getName().equals(python)) {
+                        p = r.exec("cmd.exe /c "  + file.getAbsolutePath() +File.separator + "python.exe " + "\"" +  scriptName + "\"");
+                        System.out.println("cmd.exe /c "  + file.getAbsolutePath() +File.separator + "python.exe " + "\"" +  scriptName + "\"");
+                        break;
+                    }
+            }
+            else {
+                p = r.exec(python + " " + scriptName);
+                System.out.println("---------------the process is:" + p.toString() + python + " " + scriptName);
+            }
 
         } catch (IOException e) {
             e.printStackTrace();

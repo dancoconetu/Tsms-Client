@@ -53,6 +53,7 @@ public class Slave implements Runnable {
             start();
         sendMessage("StringSocket");
 
+
     }
 
     public boolean isAlive()
@@ -114,7 +115,17 @@ public class Slave implements Runnable {
         if (msg.length()>11)
         if (msg.substring(0,13).equals("server:script"))
         {   try {
-            sendMessage("ScriptResults:" + handler.runScript(msg.substring(13)));
+            String[] p = msg.substring(13).split(";");
+            sendMessage("ScriptResults:" + handler.runScript(p[0],p[1]));
+            File scriptFolder = new File(p[0]).getParentFile();
+            System.out.println("-------Path: " + new File(p[0]).getParentFile());
+            for (File file: folderInfo.getAllFilesWithExtension("xml",scriptFolder))
+            {   System.out.println("------------sending");
+                sendFile(file);
+                System.out.println("+++++++++++deleting..");
+                file.delete();
+            }
+
         }
         catch (Exception ex)
         {
@@ -134,7 +145,21 @@ public class Slave implements Runnable {
            STOP=true;
         }
 
+        if(msg.equals("AvailablePythonVersions"))
+        {
+            if (systemInfo.isWindows())
+            {
 
+                sendMessage("PythonVersions:" + systemInfo.getPythonVersionWindows());
+            }
+            else
+            {
+
+                sendMessage("PythonVersionsMac:" + systemInfo.getPythonVersionsMac());
+
+            }
+
+        }
 
         if(msg.contains("<SendFile"))
         {
@@ -166,7 +191,7 @@ public class Slave implements Runnable {
 
         if(msg.contains("AvailablePythonScripts"))
         {
-            ArrayList<File> pythonFiles = folderInfo.getAllFilesWithExtension("py");
+            ArrayList<File> pythonFiles = folderInfo.getAllFilesWithExtensionFromSubfolders("py");
             XMLCreator xmlCreator = new XMLCreator(folderInfo);
             String xmlPythonFiles =  xmlCreator.createAvailablePythonScript(pythonFiles);
             sendMessage(xmlPythonFiles);

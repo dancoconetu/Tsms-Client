@@ -97,84 +97,39 @@ public class SystemInfo {
             return "Unknown";
     }
 
-    public ArrayList<String> getPythonVersionWindows()
+    public String getPythonVersionWindows()
     {
-        ArrayList<String> pythonVersions = new ArrayList<String>();
+        String list="";
         File c = new File("C:\\");
         for ( File file: c.listFiles())
         {
             if (file.getName().toLowerCase().contains("python"))
             {
-                pythonVersions.add(file.getName());
+                list+=file.getName() +";";
             }
         }
 
-        return pythonVersions;
+        return list;
     }
 
     public String getPythonVersionsMac() {
 
+        String v = "";
 
 
-            Runtime r = Runtime.getRuntime();
-            Process p = null;
+           File versions = new File("/Library/Frameworks/Python.framework/Versions");
 
-            try {
-
-
-                p = r.exec("python -V ");
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-
-
-            String line = "";
-            String mainPythonVersion="";
-            try {
-                mainPythonVersion = br.readLine();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            try {
-
-
-                p = r.exec("python -V ");
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String secondaryPythonVersion="";
-            try {
-                secondaryPythonVersion = br.readLine();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            if (mainPythonVersion.contains("Python 2"))
+        for (File file: versions.listFiles())
+        {
+            if (!file.getName().contains("Current"))
             {
-                if (secondaryPythonVersion.contains("Python 3"))
-                    return "python3";
-                else
-                    return "noPython3";
+                v+= file.getName()+";";
             }
-            else
-            {
-                if (mainPythonVersion.contains("Python 3"))
-                {
-                    if (secondaryPythonVersion.contains("Python 2"))
-                        return "python2";
-                        else
-                        return "noPython2";
+        }
 
-                }
-                else
-                    return "noPythonAtAll";
-            }
+        return v;
+
+
 
         }
 
