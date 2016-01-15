@@ -181,6 +181,19 @@ public class Slave implements Runnable {
             sendMessage(xmlFilesMissing);
         }
 
+        if(msg.contains("FilesAvailable"))
+        {
+            ArrayList<File> filesAvailable = new ArrayList<File>();
+            XMLCreator xmlCreator = new XMLCreator(folderInfo);
+            folderInfo.listf(folderInfo.folderPath.getAbsolutePath(),filesAvailable);
+            sendMessage(xmlCreator.createFilesAvailable(filesAvailable));
+        }
+
+        if(msg.contains("deleteFile:"))
+        {
+            new File(msg.substring("deleteFile:".length())).delete();
+        }
+
 
         if(msg.contains("SendOsInfo"))
         {   XMLCreator xmlCreator = new XMLCreator(folderInfo);

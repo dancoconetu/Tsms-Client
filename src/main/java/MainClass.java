@@ -29,7 +29,6 @@ public class MainClass extends JFrame {
     private JButton connectButton;
     private JLabel connectStatusLabel;
     private JButton hideAppButton;
-    private JTextField scriptsResults;
     private JFileChooser chooser;
     private String choosertitle;
     private Slave slave = null;
@@ -260,12 +259,12 @@ public class MainClass extends JFrame {
 
     public static void main(String[] args)
     {
-//        try {
-//            new ServerSocket(11000);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            System.exit(0);
-//        }
+        try {
+            new ServerSocket(11000);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(0);
+        }
 //        JFrame jFrame = new JFrame("TSMS Slave");
 //
 //        jFrame.setContentPane(new MainClass().panel1);
